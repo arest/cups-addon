@@ -1,0 +1,79 @@
+# Listen on all interfaces
+Listen 0.0.0.0:631
+
+# Allow access from local network
+<Location />
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
+# Admin access requires authentication
+<Location /admin>
+  AuthType Basic
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
+<Location /admin/conf>
+  AuthType Basic
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
+<Location /admin/log>
+  AuthType Basic
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
+# Job listing remains LAN-accessible
+<Location /jobs>
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
+# Printing remains LAN-accessible
+<Limit Send-Document Send-URI Create-Job>
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Limit>
+
+# Admin-level operations require authenticated system user
+<Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Move-Job>
+  AuthType Basic
+  Require user @SYSTEM
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Limit>
+
+# Enable web interface
+WebInterface Yes
+
+# Default settings
+DefaultAuthType Basic
+JobSheets none,none
+PreserveJobHistory No

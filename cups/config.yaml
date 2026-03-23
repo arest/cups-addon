@@ -20,7 +20,9 @@ init: false
 options:
   admin_username: "printadmin"
   admin_password: "change_me_now"
+  force_regenerate_config: false
 schema:
   admin_username: str
   admin_password: password
+  force_regenerate_config: bool
 startup: services

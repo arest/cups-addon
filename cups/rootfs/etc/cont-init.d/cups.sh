@@ -5,6 +5,10 @@ source /usr/lib/bashio/bashio.sh
 
 ADMIN_USER="$(bashio::config 'admin_username')"
 ADMIN_PASSWORD="$(bashio::config 'admin_password')"
+FORCE_REGENERATE_CONFIG="$(bashio::config 'force_regenerate_config')"
+
+CUPSD_CONF="/data/cups/config/cupsd.conf"
+TEMPLATE_PATH="/etc/cups/cupsd.conf.template"
 
 if [[ -z "${ADMIN_USER}" ]]; then
   bashio::log.fatal "Configuration admin_username must not be empty"
@@ -36,89 +40,51 @@ chmod -R 775 /data/cups
 # Create CUPS configuration directory if it doesn't exist
 mkdir -p /etc/cups
 
-# Write default configuration only on first run to avoid clobbering user changes.
-if [[ ! -f /data/cups/config/cupsd.conf ]]; then
-  cat > /data/cups/config/cupsd.conf << EOL
-# Listen on all interfaces
-Listen 0.0.0.0:631
+if [[ ! -f "${TEMPLATE_PATH}" ]]; then
+  bashio::log.fatal "Managed CUPS template not found at ${TEMPLATE_PATH}"
+  exit 1
+fi
 
-# Allow access from local network
-<Location />
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Location>
+TEMPLATE_SHA256="$(sha256sum "${TEMPLATE_PATH}" | awk '{print $1}')"
 
-# Admin access requires authentication
-<Location /admin>
-  AuthType Basic
-  Require user @SYSTEM
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Location>
+MANAGED_CONFIG_VERSION="3"
 
-<Location /admin/conf>
-  AuthType Basic
-  Require user @SYSTEM
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Location>
+write_managed_cupsd_conf() {
+  {
+    echo "# HA_ADDON_MANAGED_VERSION=${MANAGED_CONFIG_VERSION}"
+    echo "# HA_ADDON_TEMPLATE_SHA256=${TEMPLATE_SHA256}"
+    cat "${TEMPLATE_PATH}"
+  } > "${CUPSD_CONF}"
+}
 
-<Location /admin/log>
-  AuthType Basic
-  Require user @SYSTEM
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Location>
+backup_and_regenerate_cupsd_conf() {
+  local ts
+  ts="$(date +%Y%m%d%H%M%S)"
+  cp "${CUPSD_CONF}" "${CUPSD_CONF}.bak.${ts}"
+  write_managed_cupsd_conf
+}
 
-# Job listing remains LAN-accessible
-<Location /jobs>
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Location>
+if [[ ! -f "${CUPSD_CONF}" ]]; then
+  bashio::log.info "No persisted cupsd.conf found, creating managed default configuration"
+  write_managed_cupsd_conf
+else
+  CURRENT_MANAGED_VERSION="$(grep -E '^# HA_ADDON_MANAGED_VERSION=' "${CUPSD_CONF}" | head -n1 | cut -d'=' -f2 || true)"
+  CURRENT_TEMPLATE_SHA256="$(grep -E '^# HA_ADDON_TEMPLATE_SHA256=' "${CUPSD_CONF}" | head -n1 | cut -d'=' -f2 || true)"
 
-# Printing remains LAN-accessible
-<Limit Send-Document Send-URI Create-Job>
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Limit>
-
-# Admin-level operations require authenticated system user
-<Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Move-Job>
-  AuthType Basic
-  Require user @SYSTEM
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Limit>
-
-# Enable web interface
-WebInterface Yes
-
-# Default settings
-DefaultAuthType Basic
-JobSheets none,none
-PreserveJobHistory No
-EOL
+  if [[ "${FORCE_REGENERATE_CONFIG}" == "true" ]]; then
+    bashio::log.warning "force_regenerate_config=true: replacing existing cupsd.conf and writing backup"
+    backup_and_regenerate_cupsd_conf
+  elif [[ -n "${CURRENT_MANAGED_VERSION}" ]]; then
+    if [[ "${CURRENT_MANAGED_VERSION}" != "${MANAGED_CONFIG_VERSION}" ]]; then
+      bashio::log.info "Updating managed cupsd.conf from version ${CURRENT_MANAGED_VERSION} to ${MANAGED_CONFIG_VERSION}"
+      backup_and_regenerate_cupsd_conf
+    elif [[ "${CURRENT_TEMPLATE_SHA256}" != "${TEMPLATE_SHA256}" ]]; then
+      bashio::log.info "Updating managed cupsd.conf because template content changed"
+      backup_and_regenerate_cupsd_conf
+    fi
+  elif [[ -z "${CURRENT_MANAGED_VERSION}" ]]; then
+    bashio::log.warning "Existing cupsd.conf is unmanaged; keeping it unchanged. Set force_regenerate_config=true to replace it with managed defaults"
+  fi
 fi
 
 if ! id -u "${ADMIN_USER}" >/dev/null 2>&1; then
@@ -129,7 +95,7 @@ addgroup "${ADMIN_USER}" lpadmin >/dev/null 2>&1 || true
 printf '%s:%s\n' "${ADMIN_USER}" "${ADMIN_PASSWORD}" | chpasswd
 
 # Create a symlink from the default config location to our persistent location
-ln -sf /data/cups/config/cupsd.conf /etc/cups/cupsd.conf
+ln -sf "${CUPSD_CONF}" /etc/cups/cupsd.conf
 ln -sf /data/cups/config/printers.conf /etc/cups/printers.conf
 ln -sf /data/cups/config/ppd /etc/cups/ppd
 ln -sf /data/cups/config/ssl /etc/cups/ssl

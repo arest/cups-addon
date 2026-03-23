@@ -56,12 +56,25 @@ The add-on provides the following configuration options:
 ```yaml
 admin_username: printadmin
 admin_password: your_secure_password
+force_regenerate_config: false
 ```
 
 - **admin_username**: Username for the CUPS admin interface (required)
 - **admin_password**: Password for the CUPS admin interface (required)
+- **force_regenerate_config**: One-shot option to replace persisted `cupsd.conf` with the latest managed default (a backup is created)
 
 Printing from LAN clients remains open, while CUPS administration requires the configured credentials.
+
+## Updating cupsd.conf Safely
+
+The add-on manages default `cupsd.conf` from a dedicated template file and tracks the applied template hash.
+
+- If no config exists, it creates a managed default file.
+- If a managed file is based on an older template hash (or managed version), it is automatically backed up and replaced.
+- If your file is unmanaged (custom/legacy), it is left untouched.
+
+To apply the latest managed defaults on an existing install, set `force_regenerate_config: true` for one restart. The old file is backed up as `cupsd.conf.bak.<timestamp>`.
+After restart, set `force_regenerate_config` back to `false`.
 
 ## Networking Notes
 
