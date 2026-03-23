@@ -17,13 +17,9 @@ map:
   - data:rw
   - share:rw
 init: false
-ports:
-  631/tcp: 631
-ports_description:
-  631/tcp: CUPS web interface and printing port
 options:
-  admin_username: "admin"
-  admin_password: "admin"
+  admin_username: "printadmin"
+  admin_password: "change_me_now"
 schema:
   admin_username: str
   admin_password: password

@@ -13,7 +13,7 @@ This Home Assistant add-on provides a CUPS (Common Unix Printing System) print s
 
 - **Network Printing**: Share printers across your local network using CUPS
 - **Web Interface**: Access the CUPS administration panel at `http://<your-ha-ip>:631` to add and manage printers
-- **Secure Administration**: Optional authentication for the CUPS admin interface
+- **Secure Administration**: Authenticated CUPS admin interface with add-on credentials
 - **Printer Support**: Compatible with a wide range of network and USB printers
 - **Lightweight**: Built on Alpine Linux for minimal resource usage
 - **Data Persistence**: Printer settings and configurations persist across restarts and updates
@@ -40,12 +40,12 @@ If you prefer to manually install:
 
 2. Copy the repository to your Home Assistant add-ons directory:
    ```bash
-   scp -r cups-addon/cups root@<your-ha-ip>:/addons/
+   scp -r cups-addon/cups root@<your-ha-ip>:/addons/local/
    ```
 
 3. In Home Assistant, go to **Settings** → **Add-ons** → **Add-on Store**.
 4. Click the 3-dot menu (top right) → **Repositories**.
-5. Add `/addons` as a repository URL and click **Add**.
+5. Add `local_addons` as a repository URL and click **Add**.
 6. Refresh the add-on store to see "CUPS Print Server."
 7. Install the add-on.
 
@@ -58,8 +58,15 @@ admin_username: printadmin
 admin_password: your_secure_password
 ```
 
-- **admin_username**: Username for the CUPS admin interface (default: printadmin)
-- **admin_password**: Password for the CUPS admin interface
+- **admin_username**: Username for the CUPS admin interface (required)
+- **admin_password**: Password for the CUPS admin interface (required)
+
+Printing from LAN clients remains open, while CUPS administration requires the configured credentials.
+
+## Networking Notes
+
+This add-on uses host networking so mDNS/Bonjour announcements are visible on the LAN.
+This is required for AirPrint discovery by iOS/macOS clients.
 
 After configuring:
 
