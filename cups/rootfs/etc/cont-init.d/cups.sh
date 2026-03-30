@@ -70,5 +70,37 @@ ln -sf /data/cups/config/printers.conf /etc/cups/printers.conf
 ln -sf /data/cups/config/ppd /etc/cups/ppd
 ln -sf /data/cups/config/ssl /etc/cups/ssl
 
+# Install user-supplied printer driver .deb (e.g. Canon UFR II for MF4412)
+DRIVER_DEB=$(jq -r '.printer_driver_deb // empty' /data/options.json 2>/dev/null)
+if [ -n "$DRIVER_DEB" ]; then
+    DRIVER_PATH="/share/${DRIVER_DEB}"
+    if [ -f "$DRIVER_PATH" ]; then
+        echo "Installing printer driver from ${DRIVER_PATH}..."
+        EXTRACT_DIR=$(mktemp -d)
+        dpkg -x "$DRIVER_PATH" "$EXTRACT_DIR"
+        # Copy CUPS filters
+        if [ -d "${EXTRACT_DIR}/usr/lib/cups/filter" ]; then
+            cp -r "${EXTRACT_DIR}/usr/lib/cups/filter/." /usr/lib/cups/filter/
+            chmod 755 /usr/lib/cups/filter/*
+        fi
+        # Copy shared libraries
+        if [ -d "${EXTRACT_DIR}/usr/lib" ]; then
+            find "${EXTRACT_DIR}/usr/lib" -name "*.so*" -exec cp {} /usr/lib/ \;
+        fi
+        # Copy PPD files
+        if [ -d "${EXTRACT_DIR}/usr/share/cups/model" ]; then
+            cp -r "${EXTRACT_DIR}/usr/share/cups/model/." /usr/share/cups/model/
+        fi
+        rm -rf "$EXTRACT_DIR"
+        echo "Printer driver installed."
+    else
+        echo "Warning: printer_driver_deb set to '${DRIVER_DEB}' but /share/${DRIVER_DEB} was not found."
+    fi
+fi
+
+# Verify printer drivers are available
+echo "Available printer drivers:"
+lpinfo -m 2>/dev/null | head -20 || echo "CUPS not yet running; drivers will be listed after start."
+
 # Start CUPS service
 /usr/sbin/cupsd -f
