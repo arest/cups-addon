@@ -21,7 +21,11 @@ RUN \
         ghostscript \
         libjpeg-turbo \
         net-snmp \
-        epson-inkjet-printer-escpr
+        epson-inkjet-printer-escpr \
+        hplip \
+        gutenprint \
+        foomatic-db \
+        foomatic-db-ppds
 
 # Copy data
 COPY rootfs /

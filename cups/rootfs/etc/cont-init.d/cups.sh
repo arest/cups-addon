@@ -70,5 +70,9 @@ ln -sf /data/cups/config/printers.conf /etc/cups/printers.conf
 ln -sf /data/cups/config/ppd /etc/cups/ppd
 ln -sf /data/cups/config/ssl /etc/cups/ssl
 
+# Verify printer drivers are available
+echo "Available printer drivers:"
+lpinfo -m 2>/dev/null | head -20 || echo "CUPS not yet running; drivers will be listed after start."
+
 # Start CUPS service
 /usr/sbin/cupsd -f
