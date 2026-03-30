@@ -24,7 +24,9 @@ ports_description:
 options:
   admin_username: "admin"
   admin_password: "admin"
+  printer_driver_deb: ""
 schema:
   admin_username: str
   admin_password: password
+  printer_driver_deb: str
 startup: services

@@ -25,7 +25,11 @@ RUN \
         hplip \
         gutenprint \
         foomatic-db \
-        foomatic-db-ppds
+        foomatic-db-ppds \
+        gcompat \
+        libstdc++ \
+        dpkg \
+        jq
 
 # Copy data
 COPY rootfs /
