@@ -28,6 +28,8 @@ RUN \
         epson-inkjet-printer-escpr \
         gutenprint \
         gutenprint-cups \
+        avahi \
+        dbus \
         gcompat \
         libstdc++ \
         dpkg \

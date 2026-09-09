@@ -18,51 +18,110 @@ chmod -R 775 /share/cups
 # Write a fresh cupsd.conf (this is static config we own)
 # ─────────────────────────────────────────────────────────────
 cat > /share/cups/config/cupsd.conf << 'EOL'
-# Listen on all interfaces
-Listen 0.0.0.0:631
+# Listen on all interfaces (Port covers TCP+UDP for IPP/AirPrint)
+Port 631
+Listen /run/cups/cups.sock
 
-# Allow access from local network
+WebInterface Yes
+DefaultAuthType None
+DefaultEncryption Never
+Browsing Yes
+BrowseLocalProtocols dnssd
+DefaultShared Yes
+JobSheets none,none
+PreserveJobHistory No
+
+# @LOCAL plus explicit v6 prefixes: Port 631 listens on IPv6 and Apple
+# clients resolve *.local to AAAA first.
 <Location />
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
-# Admin access (no authentication)
 <Location /admin>
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
-# Job management permissions
+<Location /admin/conf>
+  Order allow,deny
+  Allow localhost
+  Allow @LOCAL
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
+</Location>
+
 <Location /jobs>
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
-<Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job Cancel-My-Jobs Close-Job CUPS-Move-Job CUPS-Get-Document>
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Limit>
+# Top-level <Limit> is ignored by cupsd; job ops must live in a Policy.
+# Cancel-Job (the web UI "Cancel Job" button) is not Cancel-My-Jobs.
+# The baked-in default policy requires @OWNER/@SYSTEM, but this image
+# never creates an admin user, so cancels always returned Unauthorized.
+<Policy default>
+  JobPrivateAccess all
+  JobPrivateValues none
+  SubscriptionPrivateAccess all
+  SubscriptionPrivateValues none
 
-# Enable web interface
-WebInterface Yes
+  <Limit Create-Job Print-Job Print-URI Validate-Job>
+    Order allow,deny
+    Allow localhost
+    Allow @LOCAL
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
+  </Limit>
 
-# Default settings
-DefaultAuthType None
-JobSheets none,none
-PreserveJobHistory No
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Job Cancel-Jobs Cancel-Current-Job Cancel-My-Jobs Suspend-Current-Job Resume-Job Close-Job CUPS-Move-Job CUPS-Get-Document Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs Promote-Job CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+    AuthType None
+    Order allow,deny
+    Allow localhost
+    Allow @LOCAL
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
+  </Limit>
+
+  <Limit All>
+    AuthType None
+    Order allow,deny
+    Allow localhost
+    Allow @LOCAL
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
+  </Limit>
+</Policy>
 EOL
 
 # Migrate legacy data from /data/cups to /share/cups if present
@@ -170,6 +229,31 @@ fi
 # Verify printer drivers are available
 echo "Available printer drivers:"
 lpinfo -m 2>/dev/null | head -20 || echo "CUPS not yet running; drivers will be listed after start."
+
+# D-Bus + Avahi so cupsd can advertise shared queues as AirPrint (_ipp._tcp).
+# This init script blocks on cupsd -f, so daemons must start here rather than
+# as sibling s6 services.
+echo "Starting D-Bus and Avahi for AirPrint..."
+mkdir -p /run/dbus /run/avahi-daemon
+dbus-uuidgen --ensure >/dev/null 2>&1 || true
+if [ ! -S /run/dbus/system_bus_socket ]; then
+    dbus-daemon --system || echo "Warning: dbus-daemon failed to start"
+fi
+for _ in $(seq 1 25); do
+    [ -S /run/dbus/system_bus_socket ] && break
+    sleep 0.2
+done
+if [ ! -S /run/avahi-daemon/socket ]; then
+    if avahi-daemon --daemonize --no-drop-root --no-rlimits; then
+        echo "Avahi started."
+    else
+        echo "Warning: avahi-daemon failed; AirPrint discovery may not work."
+    fi
+fi
+for _ in $(seq 1 25); do
+    [ -S /run/avahi-daemon/socket ] && break
+    sleep 0.2
+done
 
 # Start CUPS service
 /usr/sbin/cupsd -f

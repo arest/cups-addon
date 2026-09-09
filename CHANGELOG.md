@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.2] — 2026-09-09
+
+- Fix web UI "Cancel Job" returning Unauthorized: put Cancel-Job in a real
+  Policy with AuthType None (top-level Limit is ignored; no admin user exists)
+- Advertise shared printers via AirPrint/Bonjour: run Avahi (reflector mode)
+  and enable CUPS DNS-SD browsing so Apple devices can discover the queues
+- Allow IPv6 LAN clients (@LOCAL, fe80::/10, fd00::/8). Port 631 listens on
+  v6 and macOS prefers AAAA for *.local, which otherwise 403s the web UI
+
 ## [1.3.1] — 2026-09-09
 
 - Fix missing Canon/HP/Brother CUPS PPDs: Alpine splits Gutenprint, so install
