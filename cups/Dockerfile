@@ -13,6 +13,8 @@ ENV CUPS_SERVERROOT=/share/cups/config
 # Note: hplip, foomatic-db, and foomatic-db-ppds were removed from Alpine 3.23
 # and are no longer available in stable repositories.
 # Gutenprint covers most printer models as a replacement.
+# Alpine splits this: `gutenprint` is libraries/tools only; `gutenprint-cups`
+# ships rastertogutenprint and the CUPS PPDs (Canon, HP, Brother, etc.).
 RUN \
     echo "http://dl-cdn.alpinelinux.org/alpine/v$(cat /etc/alpine-release | cut -d'.' -f1,2)/main" > /etc/apk/repositories && \
     echo "http://dl-cdn.alpinelinux.org/alpine/v$(cat /etc/alpine-release | cut -d'.' -f1,2)/community" >> /etc/apk/repositories && \
@@ -25,6 +27,7 @@ RUN \
         net-snmp \
         epson-inkjet-printer-escpr \
         gutenprint \
+        gutenprint-cups \
         gcompat \
         libstdc++ \
         dpkg \

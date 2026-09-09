@@ -107,8 +107,17 @@ This app supports various printer types:
 
 
 ### Printer Drivers
-   https://www.openprinting.org/download/PPD/
-   https://www.openprinting.org/drivers/
+
+Gutenprint CUPS drivers (Canon, HP, Brother, and many others) are bundled via
+the Alpine `gutenprint-cups` package. In the add-printer list, models often
+appear as a series name (for example Canon PIXMA MG5250 is **Canon MG5200
+series - CUPS+Gutenprint**).
+
+For printers Gutenprint does not cover, supply a `.deb` through
+`printer_driver_deb` (place the file in `/share`) or use a PPD from:
+
+- https://www.openprinting.org/download/PPD/
+- https://www.openprinting.org/drivers/
 
 ### Authentication Issues
 
