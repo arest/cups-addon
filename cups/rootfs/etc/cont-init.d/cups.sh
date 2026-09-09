@@ -31,37 +31,50 @@ DefaultShared Yes
 JobSheets none,none
 PreserveJobHistory No
 
-# Allow access from local network
+# @LOCAL plus explicit v6 prefixes: Port 631 listens on IPv6 and Apple
+# clients resolve *.local to AAAA first.
 <Location />
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
 <Location /admin>
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
 <Location /admin/conf>
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
 <Location /jobs>
   Order allow,deny
   Allow localhost
+  Allow @LOCAL
   Allow 10.0.0.0/8
   Allow 172.16.0.0/12
   Allow 192.168.0.0/16
+  Allow fe80::/10
+  Allow fd00::/8
 </Location>
 
 # Top-level <Limit> is ignored by cupsd; job ops must live in a Policy.
@@ -77,27 +90,36 @@ PreserveJobHistory No
   <Limit Create-Job Print-Job Print-URI Validate-Job>
     Order allow,deny
     Allow localhost
+    Allow @LOCAL
     Allow 10.0.0.0/8
     Allow 172.16.0.0/12
     Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
   </Limit>
 
   <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Job Cancel-Jobs Cancel-Current-Job Cancel-My-Jobs Suspend-Current-Job Resume-Job Close-Job CUPS-Move-Job CUPS-Get-Document Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs Promote-Job CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
     AuthType None
     Order allow,deny
     Allow localhost
+    Allow @LOCAL
     Allow 10.0.0.0/8
     Allow 172.16.0.0/12
     Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
   </Limit>
 
   <Limit All>
     AuthType None
     Order allow,deny
     Allow localhost
+    Allow @LOCAL
     Allow 10.0.0.0/8
     Allow 172.16.0.0/12
     Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
   </Limit>
 </Policy>
 EOL

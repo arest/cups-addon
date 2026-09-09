@@ -8,6 +8,8 @@
   Policy with AuthType None (top-level Limit is ignored; no admin user exists)
 - Advertise shared printers via AirPrint/Bonjour: run Avahi (reflector mode)
   and enable CUPS DNS-SD browsing so Apple devices can discover the queues
+- Allow IPv6 LAN clients (@LOCAL, fe80::/10, fd00::/8). Port 631 listens on
+  v6 and macOS prefers AAAA for *.local, which otherwise 403s the web UI
 
 ## [1.2.1] — 2026-05-17
 
