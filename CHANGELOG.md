@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] — 2026-09-09
+
+- Fix missing Canon/HP/Brother CUPS PPDs: Alpine splits Gutenprint, so install
+  `gutenprint-cups` (filters + PPDs) in addition to `gutenprint`
+
 ## [1.2.1] — 2026-05-17
 
 - Fix: remove hardcoded aarch64 default from BUILD_FROM ARG
