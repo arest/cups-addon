@@ -80,7 +80,20 @@ Visit `http://<your-ha-ip>:631` in your browser.
 
 ### Print from Devices
 
-Configure your computers or devices to use the printer at `<your-ha-ip>:631`.
+Shared printers are advertised on the LAN via AirPrint/Bonjour (Avahi). On
+iPhone, iPad, and Mac they should appear as nearby printers. Do not pick the
+printer's own LPD advertisement (for example "Canon MG5200 series") — that
+bypasses this server.
+
+To add the CUPS queue manually on macOS:
+
+1. System Settings → Printers & Scanners → Add Printer → **IP**
+2. Address: `<your-ha-hostname>` (e.g. `homeassistant.local`)
+3. Protocol: **IPP**
+4. Queue: `printers/<queue-name>`
+5. Use: **Auto Select**
+
+You can also print to `ipp://<your-ha-ip>:631/printers/<queue-name>`.
 
 ## Supported Printer Types
 

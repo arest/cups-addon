@@ -18,12 +18,16 @@ chmod -R 775 /share/cups
 # Write a fresh cupsd.conf (this is static config we own)
 # ─────────────────────────────────────────────────────────────
 cat > /share/cups/config/cupsd.conf << 'EOL'
-# Listen on all interfaces
-Listen 0.0.0.0:631
+# Listen on all interfaces (Port covers TCP+UDP for IPP/AirPrint)
+Port 631
+Listen /run/cups/cups.sock
 
 WebInterface Yes
 DefaultAuthType None
 DefaultEncryption Never
+Browsing Yes
+BrowseLocalProtocols dnssd
+DefaultShared Yes
 JobSheets none,none
 PreserveJobHistory No
 
@@ -203,6 +207,31 @@ fi
 # Verify printer drivers are available
 echo "Available printer drivers:"
 lpinfo -m 2>/dev/null | head -20 || echo "CUPS not yet running; drivers will be listed after start."
+
+# D-Bus + Avahi so cupsd can advertise shared queues as AirPrint (_ipp._tcp).
+# This init script blocks on cupsd -f, so daemons must start here rather than
+# as sibling s6 services.
+echo "Starting D-Bus and Avahi for AirPrint..."
+mkdir -p /run/dbus /run/avahi-daemon
+dbus-uuidgen --ensure >/dev/null 2>&1 || true
+if [ ! -S /run/dbus/system_bus_socket ]; then
+    dbus-daemon --system || echo "Warning: dbus-daemon failed to start"
+fi
+for _ in $(seq 1 25); do
+    [ -S /run/dbus/system_bus_socket ] && break
+    sleep 0.2
+done
+if [ ! -S /run/avahi-daemon/socket ]; then
+    if avahi-daemon --daemonize --no-drop-root --no-rlimits; then
+        echo "Avahi started."
+    else
+        echo "Warning: avahi-daemon failed; AirPrint discovery may not work."
+    fi
+fi
+for _ in $(seq 1 25); do
+    [ -S /run/avahi-daemon/socket ] && break
+    sleep 0.2
+done
 
 # Start CUPS service
 /usr/sbin/cupsd -f

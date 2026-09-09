@@ -6,6 +6,8 @@
   `gutenprint-cups` (filters + PPDs) in addition to `gutenprint`
 - Fix web UI "Cancel Job" returning Unauthorized: put Cancel-Job in a real
   Policy with AuthType None (top-level Limit is ignored; no admin user exists)
+- Advertise shared printers via AirPrint/Bonjour: run Avahi (reflector mode)
+  and enable CUPS DNS-SD browsing so Apple devices can discover the queues
 
 ## [1.2.1] — 2026-05-17
 

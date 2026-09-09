@@ -17,8 +17,10 @@ map:
 init: false
 ports:
   631/tcp: 631
+  631/udp: 631
 ports_description:
   631/tcp: CUPS web interface and printing port
+  631/udp: IPP browsing / AirPrint
 options:
   admin_username: "admin"
   admin_password: "admin"
