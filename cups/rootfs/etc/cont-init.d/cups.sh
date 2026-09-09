@@ -21,6 +21,12 @@ cat > /share/cups/config/cupsd.conf << 'EOL'
 # Listen on all interfaces
 Listen 0.0.0.0:631
 
+WebInterface Yes
+DefaultAuthType None
+DefaultEncryption Never
+JobSheets none,none
+PreserveJobHistory No
+
 # Allow access from local network
 <Location />
   Order allow,deny
@@ -30,7 +36,6 @@ Listen 0.0.0.0:631
   Allow 192.168.0.0/16
 </Location>
 
-# Admin access (no authentication)
 <Location /admin>
   Order allow,deny
   Allow localhost
@@ -39,7 +44,14 @@ Listen 0.0.0.0:631
   Allow 192.168.0.0/16
 </Location>
 
-# Job management permissions
+<Location /admin/conf>
+  Order allow,deny
+  Allow localhost
+  Allow 10.0.0.0/8
+  Allow 172.16.0.0/12
+  Allow 192.168.0.0/16
+</Location>
+
 <Location /jobs>
   Order allow,deny
   Allow localhost
@@ -48,21 +60,42 @@ Listen 0.0.0.0:631
   Allow 192.168.0.0/16
 </Location>
 
-<Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job Cancel-My-Jobs Close-Job CUPS-Move-Job CUPS-Get-Document>
-  Order allow,deny
-  Allow localhost
-  Allow 10.0.0.0/8
-  Allow 172.16.0.0/12
-  Allow 192.168.0.0/16
-</Limit>
+# Top-level <Limit> is ignored by cupsd; job ops must live in a Policy.
+# Cancel-Job (the web UI "Cancel Job" button) is not Cancel-My-Jobs.
+# The baked-in default policy requires @OWNER/@SYSTEM, but this image
+# never creates an admin user, so cancels always returned Unauthorized.
+<Policy default>
+  JobPrivateAccess all
+  JobPrivateValues none
+  SubscriptionPrivateAccess all
+  SubscriptionPrivateValues none
 
-# Enable web interface
-WebInterface Yes
+  <Limit Create-Job Print-Job Print-URI Validate-Job>
+    Order allow,deny
+    Allow localhost
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+  </Limit>
 
-# Default settings
-DefaultAuthType None
-JobSheets none,none
-PreserveJobHistory No
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Job Cancel-Jobs Cancel-Current-Job Cancel-My-Jobs Suspend-Current-Job Resume-Job Close-Job CUPS-Move-Job CUPS-Get-Document Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs Promote-Job CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+    AuthType None
+    Order allow,deny
+    Allow localhost
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+  </Limit>
+
+  <Limit All>
+    AuthType None
+    Order allow,deny
+    Allow localhost
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+  </Limit>
+</Policy>
 EOL
 
 # Migrate legacy data from /data/cups to /share/cups if present
