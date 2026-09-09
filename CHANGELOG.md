@@ -4,6 +4,8 @@
 
 - Fix missing Canon/HP/Brother CUPS PPDs: Alpine splits Gutenprint, so install
   `gutenprint-cups` (filters + PPDs) in addition to `gutenprint`
+- Fix web UI "Cancel Job" returning Unauthorized: put Cancel-Job in a real
+  Policy with AuthType None (top-level Limit is ignored; no admin user exists)
 
 ## [1.2.1] — 2026-05-17
 
