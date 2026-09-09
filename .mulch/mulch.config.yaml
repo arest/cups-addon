@@ -1,6 +1,7 @@
 version: '1'
 domains:
   cups-printers: {}
+  alpine-printer-drivers: {}
 governance:
   max_entries: 100
   warn_entries: 150
