@@ -112,10 +112,24 @@ else
 fi
 
 # --- AirPrint / Avahi --------------------------------------------------------
-if server_exec 'pgrep -x avahi-daemon >/dev/null'; then
+# avahi-daemon is started with --daemonize, which always returns 0 even when the
+# child then exits (e.g. because D-Bus was not actually usable yet), so poll for
+# the process rather than sampling once.
+avahi_procs=""
+for _ in $(seq 1 12); do
+  avahi_procs="$(server_exec 'pgrep -a avahi-daemon 2>/dev/null' || true)"
+  [ -n "$avahi_procs" ] && break
+  sleep 5
+done
+if [ -n "$avahi_procs" ]; then
   ok "avahi-daemon is running for AirPrint/Bonjour"
 else
-  bad "avahi-daemon is not running"
+  bad "avahi-daemon is not running (no process matches 'avahi-daemon')"
+fi
+if server_exec '[ -S /run/avahi-daemon/socket ]'; then
+  ok "avahi-daemon control socket exists"
+else
+  bad "avahi-daemon control socket is missing"
 fi
 
 # --- access policy -----------------------------------------------------------
@@ -149,6 +163,18 @@ else
       2>/dev/null || echo "000")"
     expect_eq "LAN client GET $path" "$code" "200"
   done
+fi
+
+if [ "$fail" -ne 0 ]; then
+  echo
+  echo "==> diagnostics (container logs)"
+  docker logs "$SERVER" 2>&1 | tail -60 || true
+  echo
+  echo "==> diagnostics (processes)"
+  server_exec 'ps -ef 2>/dev/null || ps w 2>/dev/null || true'
+  echo
+  echo "==> diagnostics (runtime sockets)"
+  server_exec 'ls -la /run/dbus /run/avahi-daemon 2>&1 || true'
 fi
 
 echo
