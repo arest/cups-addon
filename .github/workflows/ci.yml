@@ -1,0 +1,61 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Job id and name are both deliberately `ci`: this is the status check
+  # context that branch protection on main requires before auto-merge fires.
+  # Keep it a single non-matrix job so the context stays exactly `ci`.
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install validation dependencies
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Validate add-on metadata
+        run: python3 .github/scripts/validate_addon.py
+
+      - name: Validate init scripts
+        run: |
+          set -euo pipefail
+          for script in cups/rootfs/etc/cont-init.d/*; do
+            echo "bash -n $script"
+            bash -n "$script"
+          done
+
+      - name: ShellCheck init scripts
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq shellcheck
+          shellcheck --severity=error cups/rootfs/etc/cont-init.d/*
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build add-on image (amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: cups
+          platforms: linux/amd64
+          load: true
+          tags: cups-addon:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test image
+        run: .github/scripts/smoke_test.sh cups-addon:ci
