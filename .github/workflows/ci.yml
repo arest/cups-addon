@@ -42,7 +42,9 @@ jobs:
           set -euo pipefail
           sudo apt-get update -qq
           sudo apt-get install -y -qq shellcheck
-          shellcheck --severity=error cups/rootfs/etc/cont-init.d/*
+          # -s bash: the s6 shebang (`#!/usr/bin/with-contenv bash`) is not
+          # recognized by ShellCheck and would otherwise trip SC1008.
+          shellcheck --severity=error -s bash cups/rootfs/etc/cont-init.d/*
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v3
