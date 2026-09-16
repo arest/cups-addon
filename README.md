@@ -147,6 +147,36 @@ Contributions are welcome! Please:
 4. Push to the branch (`git push origin feature/your-feature`).
 5. Open a pull request.
 
+### Running the checks locally
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) validates the add-on
+metadata, lints the init scripts, then builds and smoke-tests the image. Run the
+same checks before opening a PR:
+
+```bash
+# Add-on metadata: required keys, known arch values, options/schema and
+# ports/description symmetry, version vs CHANGELOG, slug vs directory name
+pip install pyyaml
+python3 .github/scripts/validate_addon.py
+
+# Init scripts
+bash -n cups/rootfs/etc/cont-init.d/*
+shellcheck --severity=error -s bash cups/rootfs/etc/cont-init.d/*
+
+# Build and smoke test
+docker build -t cups-addon:ci cups/
+.github/scripts/smoke_test.sh cups-addon:ci
+```
+
+The smoke test boots the image the way the Supervisor does and checks that cupsd
+comes up, that the compiled filters (`rastertokpsl`, `raster2dymolw`/`m`) and
+vendored PPDs are present, that avahi is advertising for AirPrint, that the
+`cupsd.conf` access policy still covers the LAN ranges, and that a LAN client can
+reach the web UI.
+
+Any change to `cups/config.yaml` must bump `version` to match the newest
+`## [x.y.z]` heading in `CHANGELOG.md` — CI enforces this.
+
 ## License
 
 This project is licensed under the MIT License.
