@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3] — 2026-10-20
+
+- Add Canon BJNP network printing backend (cups-bjnp 2.0.3), compiled at image build time.
+- Verify BJNP upstream source archive using SHA-256.
+- Preserve Gutenprint, existing printer drivers, and other upstream features.
+- Rename add-on display name to "CUPS Print Server (BJNP)".
+
 ## [1.3.2] — 2026-09-09
 
 - Fix web UI "Cancel Job" returning Unauthorized: put Cancel-Job in a real
@@ -8,7 +15,6 @@
   and enable CUPS DNS-SD browsing so Apple devices can discover the queues
 - Allow IPv6 LAN clients (@LOCAL, fe80::/10, fd00::/8). Port 631 listens on
   v6 and macOS prefers AAAA for *.local, which otherwise 403s the web UI
-
 ## [1.3.1] — 2026-09-09
 
 - Fix missing Canon/HP/Brother CUPS PPDs: Alpine splits Gutenprint, so install
@@ -17,7 +23,6 @@
 ## [1.2.1] — 2026-05-17
 
 - Fix: remove hardcoded aarch64 default from BUILD_FROM ARG
-
 ## [1.2.0] — 2026-05-15
 
 - Fix printer list not persisting across container restarts: replace file-level
@@ -28,7 +33,6 @@
 ## [1.1.1] — 2026-05-15
 
 - Fix build failure on Alpine 3.23 (HA OS 2026.5): remove unavailable packages hplip, foomatic-db, foomatic-db-ppds
-
 ## [1.1.0] — 2026-05-15
 
 - Upgrade to CUPS 3.0
@@ -43,7 +47,6 @@
 ## [0.9.0] — 2026-01-25
 
 - Persist PPD documents across restarts
-
 ## [0.8.0] — 2025-05-08
 
 - Move everything into a subfolder and add repository YAML
