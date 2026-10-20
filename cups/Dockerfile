@@ -8,7 +8,6 @@ ENV CUPS_CACHEDIR=/share/cups/cache
 ENV CUPS_LOGDIR=/share/cups/logs
 ENV CUPS_STATEDIR=/share/cups/state
 ENV CUPS_SERVERROOT=/share/cups/config
-
 # Setup base
 # Note: hplip, foomatic-db, and foomatic-db-ppds were removed from Alpine 3.23
 # and are no longer available in stable repositories.
@@ -34,7 +33,6 @@ RUN \
         libstdc++ \
         dpkg \
         jq
-
 # Build the open-source rastertokpsl filter for Kyocera GDI (KPSL) printers
 # (FS-1040/1041, FS-1060DN/1061DN, FS-1020/1025/1120/1125MFP). Their PPDs
 # reference /usr/lib/cups/filter/rastertokpsl; the official filter is
@@ -57,7 +55,6 @@ RUN \
         -lcups -lm && \
     rm -rf /tmp/rastertokpsl && \
     apk del .rastertokpsl-build
-
 # Build and install the Dymo CUPS drivers (LabelWriter/LabelManager). The
 # Dymo PPDs (e.g. lw4xl.ppd for the LabelWriter 4XL) reference
 # /usr/lib/cups/filter/raster2dymolw; the filter is proprietary and not
@@ -78,6 +75,31 @@ RUN \
     cd / && \
     rm -rf /tmp/dymo-cups-drivers && \
     apk del .dymo-build
+
+# Canon BJNP network backend (port 8611): build from Debian's published
+# cups-bjnp 2.0.3 source. The checksum protects against unexpected changes.
+RUN \
+    apk add --no-cache --virtual .bjnp-build \
+        build-base \
+        cups-dev \
+        curl \
+        ca-certificates && \
+    mkdir -p /tmp/cups-bjnp && \
+    curl --fail --location --retry 3 \
+      -o /tmp/cups-bjnp.tar.gz \
+      https://deb.debian.org/debian/pool/main/c/cups-bjnp/cups-bjnp_2.0.3.orig.tar.gz && \
+    echo "c914b2fd9d8e26ce22f2df6244d9defeec31ee9a5360f723eecb3b00f2168500  /tmp/cups-bjnp.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/cups-bjnp.tar.gz -C /tmp/cups-bjnp --strip-components=1 && \
+    cd /tmp/cups-bjnp && \
+    ./configure --prefix=/usr \
+      --with-cupsbackenddir=/usr/lib/cups/backend \
+      --disable-Werror && \
+    make && \
+    install -m 755 bjnp /usr/lib/cups/backend/bjnp && \
+    test -x /usr/lib/cups/backend/bjnp && \
+    cd / && \
+    rm -rf /tmp/cups-bjnp /tmp/cups-bjnp.tar.gz && \
+    apk del .bjnp-build
 
 # Copy data
 COPY rootfs /
