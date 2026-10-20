@@ -1,6 +1,6 @@
 
 
-# Home Assistant CUPS Print Server App
+# Home Assistant CUPS Print Server App with BJNP support
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/arest/cups-addon)
 [![Supports aarch64 Architecture](https://img.shields.io/badge/aarch64-yes-green.svg)](https://github.com/arest/cups-addon)
@@ -11,6 +11,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 ## Features
 
 - **Network Printing**: Share printers across your local network using CUPS
+- **Added BJNP protocol support**: For network use with older Canon Printers (tested with Pixma MX860 over LAN) 
 - **Web Interface**: Access the CUPS administration panel at `http://<your-ha-ip>:631` to add and manage printers
 - **Secure Administration**: Optional authentication for the CUPS admin interface
 - **Printer Support**: Compatible with a wide range of network and USB printers
@@ -24,7 +25,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 1. Navigate to your Home Assistant instance.
 2. Go to **Settings** → **Apps** → **Install App**.
 3. Click the 3-dot menu in the top right corner and select **Repositories**.
-4. Add `https://github.com/arest/cups-addon` as a repository.
+4. Add `https://github.com/nilbaer/cups-addon` as a repository.
 5. Find the "CUPS Print Server" app in the store and click it.
 6. Click **Install**.
 
@@ -34,7 +35,7 @@ If you prefer to manually install:
 
 1. Clone this repository to your local machine:
    ```bash
-   git clone https://github.com/arest/cups-addon.git
+   git clone https://github.com/nilbaer/cups-addon.git
    ```
 
 2. Copy the repository to your Home Assistant add-ons directory:
@@ -99,7 +100,7 @@ You can also print to `ipp://<your-ha-ip>:631/printers/<queue-name>`.
 
 This app supports various printer types:
 
-- Network printers (via IPP, LPD, etc.)
+- Network printers (via IPP, LPD, BJNP, etc.)
 - USB printers connected to your Home Assistant host
 - Shared Windows printers (via Samba)
 - AirPrint for Apple devices
