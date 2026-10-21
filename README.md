@@ -12,7 +12,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 
 - **Network Printing**: Share printers across your local network using CUPS
 - **Web Interface**: Access the CUPS administration panel at `http://<your-ha-ip>:631` to add and manage printers
-- **Secure Administration**: Optional authentication for the CUPS admin interface
+- **Secure Administration**: Configurable authentication for the CUPS admin interface
 - **Printer Support**: Compatible with a wide range of network and USB printers
 - **Lightweight**: Built on Alpine Linux for minimal resource usage
 - **Data Persistence**: Printer settings and configurations persist across restarts and updates
@@ -57,8 +57,20 @@ admin_username: printadmin
 admin_password: your_secure_password
 ```
 
-- **admin_username**: Username for the CUPS admin interface (default: printadmin)
+- **admin_username**: Username for the CUPS admin interface (default: admin)
 - **admin_password**: Password for the CUPS admin interface
+
+Both values are applied when the app starts. If `admin_password` is non-empty
+(the shipped default is `admin`), opening the Administration pages or adding,
+modifying, or deleting printers prompts for these credentials. Printing and
+cancelling jobs remain available to LAN clients without a login.
+
+Set a strong password before exposing the app to your network. Leave
+`admin_password` empty to disable admin authentication.
+
+> Do not edit `/share/cups/config/cupsd.conf` directly: the add-on regenerates
+> it from these options on every start, so manual changes (including
+> `AuthType`) are reverted when the app restarts.
 
 After configuring:
 
@@ -135,7 +147,10 @@ For printers Gutenprint does not cover, supply a `.deb` through
 ### Authentication Issues
 
 - Verify you're using the correct username and password configured in the app settings.
-- If you've forgotten your password, you can reset it by reconfiguring the app.
+- Changing the username or password requires an app restart; the credentials are applied during startup.
+- Authentication is requested for administration pages and printer management, not for the public status pages or for submitting/cancelling print jobs.
+- If you've forgotten your password, set a new one in the app configuration and restart the app.
+- Manual edits to `cupsd.conf` are not persistent; use the app options instead.
 
 ## Contributing
 

@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.3] — 2026-10-21
+
+- Fix `admin_username`/`admin_password` being ignored: create the configured
+  CUPS system user in the `lpadmin` group and require Basic authentication for
+  the Administration web UI and printer-management IPP operations. Job
+  submission and cancellation remain available to anonymous LAN clients; leave
+  `admin_password` empty to disable admin authentication.
+
 ## [1.3.2] — 2026-09-09
 
 - Fix web UI "Cancel Job" returning Unauthorized: put Cancel-Job in a real
