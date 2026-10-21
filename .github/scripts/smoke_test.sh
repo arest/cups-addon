@@ -12,6 +12,7 @@ IMAGE="${1:?usage: smoke_test.sh <image>}"
 SUFFIX="$$-$(date +%s)"
 NET="cups-smoke-net-${SUFFIX}"
 SERVER="cups-smoke-server-${SUFFIX}"
+SHARE_VOLUME="cups-smoke-share-${SUFFIX}"
 
 # The Supervisor writes the app options to /data/options.json before starting
 # the add-on. Mount a temp directory there so the smoke test exercises the real
@@ -49,6 +50,7 @@ expect_absent() { # description, haystack, needle
 cleanup() {
   docker rm -f "$SERVER" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
+  docker volume rm "$SHARE_VOLUME" >/dev/null 2>&1 || true
   rm -rf "$OPTIONS_DIR"
 }
 trap cleanup EXIT
@@ -57,7 +59,9 @@ server_exec() { docker exec "$SERVER" sh -c "$1"; }
 
 echo "==> starting $IMAGE on an isolated bridge network"
 docker network create "$NET" >/dev/null
-docker run -d --name "$SERVER" --network "$NET" -v "$OPTIONS_DIR:/data" "$IMAGE" >/dev/null
+docker volume create "$SHARE_VOLUME" >/dev/null
+docker run -d --name "$SERVER" --network "$NET" \
+  -v "$OPTIONS_DIR:/data" -v "$SHARE_VOLUME:/share" "$IMAGE" >/dev/null
 
 # The Supervisor treats `init: false` services as up once s6 finishes the
 # oneshot init; wait for cupsd to answer on its socket instead of guessing.
@@ -168,6 +172,32 @@ else
   expect_contains "admin UI restricted to CUPS SystemGroup" \
     "$cupsd_conf" "Require user @SYSTEM"
 fi
+
+# --- manual configuration persistence ---------------------------------------
+# Editing the configuration from the CUPS web UI writes directly to
+# /share/cups/config/cupsd.conf. Custom directives keep their own place
+# outside the add-on's managed block and must survive an app restart.
+server_exec "printf '\nServerAlias cups-smoke.example\n' >> /share/cups/config/cupsd.conf"
+
+echo "==> restarting container to verify manual cupsd.conf edits persist"
+docker restart "$SERVER" >/dev/null
+scheduler=""
+for _ in $(seq 1 36); do
+  scheduler="$(server_exec 'lpstat -r 2>/dev/null' || true)"
+  case "$scheduler" in
+    *"scheduler is running"*) break ;;
+  esac
+  sleep 5
+done
+expect_eq "cupsd scheduler is running after restart" "$scheduler" "scheduler is running"
+
+cupsd_conf_after="$(server_exec 'cat /share/cups/config/cupsd.conf' || true)"
+expect_contains "manual cupsd.conf directive survives a restart" \
+  "$cupsd_conf_after" "ServerAlias cups-smoke.example"
+expect_contains "managed cupsd.conf block is still present after a restart" \
+  "$cupsd_conf_after" "CUPS ADD-ON MANAGED CONFIG"
+expect_contains "managed admin authentication still applies after a restart" \
+  "$cupsd_conf_after" "AuthType Basic"
 
 # --- reachability from a LAN client -----------------------------------------
 # A second container on the same bridge is the closest stand-in for a LAN

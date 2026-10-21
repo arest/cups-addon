@@ -68,9 +68,13 @@ cancelling jobs remain available to LAN clients without a login.
 Set a strong password before exposing the app to your network. Leave
 `admin_password` empty to disable admin authentication.
 
-> Do not edit `/share/cups/config/cupsd.conf` directly: the add-on regenerates
-> it from these options on every start, so manual changes (including
-> `AuthType`) are reverted when the app restarts.
+> The add-on owns only the block between the
+> `# >>> CUPS ADD-ON MANAGED CONFIG` and
+> `# <<< CUPS ADD-ON MANAGED CONFIG <<<` markers in
+> `/share/cups/config/cupsd.conf`. It is regenerated on every start so changes
+> to the app options take effect. Add custom directives (for example
+> `ServerAlias *`) outside that block; they are preserved across app restarts
+> and updates, including when you save the file from the CUPS web UI.
 
 After configuring:
 
@@ -150,7 +154,9 @@ For printers Gutenprint does not cover, supply a `.deb` through
 - Changing the username or password requires an app restart; the credentials are applied during startup.
 - Authentication is requested for administration pages and printer management, not for the public status pages or for submitting/cancelling print jobs.
 - If you've forgotten your password, set a new one in the app configuration and restart the app.
-- Manual edits to `cupsd.conf` are not persistent; use the app options instead.
+- Custom `cupsd.conf` directives are persistent when placed outside the managed
+  block. Only the block between the `CUPS ADD-ON MANAGED CONFIG` markers is
+  rewritten on restart.
 
 ## Contributing
 
@@ -206,6 +212,7 @@ This project is licensed under the MIT License.
 This app stores all CUPS data in the Home Assistant `/share` directory, ensuring:
 
 - Printer configurations persist across app restarts
+- Custom `cupsd.conf` directives outside the managed block survive restarts
 - Print jobs and settings are maintained through system reboots
 - App updates won't cause loss of printer configurations
 - All CUPS data is included in Home Assistant backups
