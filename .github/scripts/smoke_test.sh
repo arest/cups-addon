@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Boot the built add-on image the way the Supervisor does and verify that CUPS
 # actually comes up, that the printer driver artifacts we compile/patch into the
-# image are present, and that the access policy still lets a LAN client reach the
-# web UI (the regression fixed in 1.3.2).
+# image are present, that the configured admin credentials protect the web UI,
+# and that the access policy still lets a LAN client reach the public pages.
 #
 # Usage: smoke_test.sh <image>
 set -euo pipefail
@@ -12,6 +12,15 @@ IMAGE="${1:?usage: smoke_test.sh <image>}"
 SUFFIX="$$-$(date +%s)"
 NET="cups-smoke-net-${SUFFIX}"
 SERVER="cups-smoke-server-${SUFFIX}"
+
+# The Supervisor writes the app options to /data/options.json before starting
+# the add-on. Mount a temp directory there so the smoke test exercises the real
+# option handling instead of running with an empty configuration.
+OPTIONS_DIR="$(mktemp -d)"
+ADMIN_USER="cupsadmin"
+ADMIN_PASSWORD="smoke-test-password"
+printf '{"admin_username":"%s","admin_password":"%s","printer_driver_deb":""}\n' \
+  "$ADMIN_USER" "$ADMIN_PASSWORD" > "$OPTIONS_DIR/options.json"
 
 pass=0
 fail=0
@@ -40,6 +49,7 @@ expect_absent() { # description, haystack, needle
 cleanup() {
   docker rm -f "$SERVER" >/dev/null 2>&1 || true
   docker network rm "$NET" >/dev/null 2>&1 || true
+  rm -rf "$OPTIONS_DIR"
 }
 trap cleanup EXIT
 
@@ -47,7 +57,7 @@ server_exec() { docker exec "$SERVER" sh -c "$1"; }
 
 echo "==> starting $IMAGE on an isolated bridge network"
 docker network create "$NET" >/dev/null
-docker run -d --name "$SERVER" --network "$NET" "$IMAGE" >/dev/null
+docker run -d --name "$SERVER" --network "$NET" -v "$OPTIONS_DIR:/data" "$IMAGE" >/dev/null
 
 # The Supervisor treats `init: false` services as up once s6 finishes the
 # oneshot init; wait for cupsd to answer on its socket instead of guessing.
@@ -79,6 +89,12 @@ for _ in $(seq 1 24); do
   sleep 5
 done
 expect_eq "declared HEALTHCHECK reports healthy" "$health" "healthy"
+
+# --- admin authentication ----------------------------------------------------
+# admin_username/admin_password must be applied to the system account and the
+# generated cupsd.conf. The HTTP checks below prove the password actually works.
+groups="$(server_exec "id -nG '$ADMIN_USER'" || true)"
+expect_contains "configured admin user is in the lpadmin group" "$groups" "lpadmin"
 
 # --- printer driver artifacts ------------------------------------------------
 # Each of these is either compiled from vendored source or shipped as a PPD in
@@ -147,6 +163,10 @@ else
   expect_absent "ACL is not an allow-all policy" "$cupsd_conf" "Allow all"
   expect_contains "Cancel-Job is authorised in a Policy" \
     "$cupsd_conf" "Cancel-Job Cancel-Jobs"
+  expect_contains "admin UI requires Basic authentication" \
+    "$cupsd_conf" "AuthType Basic"
+  expect_contains "admin UI restricted to CUPS SystemGroup" \
+    "$cupsd_conf" "Require user @SYSTEM"
 fi
 
 # --- reachability from a LAN client -----------------------------------------
@@ -157,12 +177,27 @@ server_ip="$(docker inspect "$SERVER" --format '{{range .NetworkSettings.Network
 if [ -z "$server_ip" ]; then
   bad "could not determine the container IP address"
 else
-  for path in / /printers/ /admin; do
+  for path in / /printers/; do
     code="$(docker run --rm --network "$NET" --entrypoint /bin/sh "$IMAGE" \
       -c "curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://$server_ip:631$path" \
       2>/dev/null || echo "000")"
     expect_eq "LAN client GET $path" "$code" "200"
   done
+
+  code="$(docker run --rm --network "$NET" --entrypoint /bin/sh "$IMAGE" \
+    -c "curl -s -o /dev/null -w '%{http_code}' --max-time 20 http://$server_ip:631/admin" \
+    2>/dev/null || echo "000")"
+  expect_eq "LAN client GET /admin without credentials" "$code" "401"
+
+  code="$(docker run --rm --network "$NET" --entrypoint /bin/sh "$IMAGE" \
+    -c "curl -s -o /dev/null -w '%{http_code}' --max-time 20 -u '$ADMIN_USER:$ADMIN_PASSWORD' http://$server_ip:631/admin" \
+    2>/dev/null || echo "000")"
+  expect_eq "LAN client GET /admin with configured credentials" "$code" "200"
+
+  code="$(docker run --rm --network "$NET" --entrypoint /bin/sh "$IMAGE" \
+    -c "curl -s -o /dev/null -w '%{http_code}' --max-time 20 -u '$ADMIN_USER:wrong-password' http://$server_ip:631/admin" \
+    2>/dev/null || echo "000")"
+  expect_eq "LAN client GET /admin with a wrong password" "$code" "401"
 fi
 
 if [ "$fail" -ne 0 ]; then

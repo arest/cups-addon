@@ -15,9 +15,61 @@ chown -R root:lp /share/cups
 chmod -R 775 /share/cups
 
 # ─────────────────────────────────────────────────────────────
+# Configure CUPS admin authentication from the app options
+# ─────────────────────────────────────────────────────────────
+ADMIN_USER=$(jq -r '.admin_username // empty' /data/options.json 2>/dev/null || true)
+ADMIN_PASSWORD=$(jq -r '.admin_password // empty' /data/options.json 2>/dev/null || true)
+
+AUTH_LOCATION=""
+AUTH_POLICY="AuthType None"
+
+if [ -n "$ADMIN_USER" ] && [ -n "$ADMIN_PASSWORD" ]; then
+    case "$ADMIN_USER" in
+        *:*|*[[:space:]]*|*/*)
+            echo "Warning: invalid admin_username '${ADMIN_USER}'; admin authentication disabled."
+            ;;
+        *)
+            AUTH_READY=1
+            if ! id "$ADMIN_USER" >/dev/null 2>&1; then
+                if ! adduser -D -H -s /sbin/nologin -G lpadmin "$ADMIN_USER"; then
+                    echo "Warning: could not create admin user '${ADMIN_USER}'; admin authentication disabled."
+                    AUTH_READY=0
+                fi
+            else
+                # Existing users must still be members of CUPS' admin group.
+                addgroup "$ADMIN_USER" lpadmin >/dev/null 2>&1 || true
+            fi
+
+            admin_groups=$(id -nG "$ADMIN_USER" 2>/dev/null || true)
+            case " ${admin_groups} " in
+                *" lpadmin "*) ;;
+                *)
+                    if [ "$AUTH_READY" -eq 1 ]; then
+                        echo "Warning: '${ADMIN_USER}' is not in the lpadmin group; admin authentication disabled."
+                    fi
+                    AUTH_READY=0
+                    ;;
+            esac
+
+            if [ "$AUTH_READY" -eq 1 ]; then
+                if printf '%s:%s\n' "$ADMIN_USER" "$ADMIN_PASSWORD" | chpasswd; then
+                    AUTH_LOCATION=$'  AuthType Basic\n  Require user @SYSTEM'
+                    AUTH_POLICY=$'    AuthType Basic\n    Require user @SYSTEM'
+                    echo "Admin authentication enabled for user '${ADMIN_USER}'."
+                else
+                    echo "Warning: could not set the password for '${ADMIN_USER}'; admin authentication disabled."
+                fi
+            fi
+            ;;
+    esac
+else
+    echo "Admin authentication disabled (admin_username/admin_password empty)."
+fi
+
+# ─────────────────────────────────────────────────────────────
 # Write a fresh cupsd.conf (this is static config we own)
 # ─────────────────────────────────────────────────────────────
-cat > /share/cups/config/cupsd.conf << 'EOL'
+cat > /share/cups/config/cupsd.conf << EOL
 # Listen on all interfaces (Port covers TCP+UDP for IPP/AirPrint)
 Port 631
 Listen /run/cups/cups.sock
@@ -25,6 +77,7 @@ Listen /run/cups/cups.sock
 WebInterface Yes
 DefaultAuthType None
 DefaultEncryption Never
+SystemGroup lpadmin
 Browsing Yes
 BrowseLocalProtocols dnssd
 DefaultShared Yes
@@ -53,6 +106,7 @@ PreserveJobHistory No
   Allow 192.168.0.0/16
   Allow fe80::/10
   Allow fd00::/8
+${AUTH_LOCATION}
 </Location>
 
 <Location /admin/conf>
@@ -64,6 +118,7 @@ PreserveJobHistory No
   Allow 192.168.0.0/16
   Allow fe80::/10
   Allow fd00::/8
+${AUTH_LOCATION}
 </Location>
 
 <Location /jobs>
@@ -79,8 +134,9 @@ PreserveJobHistory No
 
 # Top-level <Limit> is ignored by cupsd; job ops must live in a Policy.
 # Cancel-Job (the web UI "Cancel Job" button) is not Cancel-My-Jobs.
-# The baked-in default policy requires @OWNER/@SYSTEM, but this image
-# never creates an admin user, so cancels always returned Unauthorized.
+# The baked-in default policy requires @OWNER/@SYSTEM, so job cancels are
+# explicitly kept anonymous while printer administration uses the configured
+# admin account (when one is set).
 <Policy default>
   JobPrivateAccess all
   JobPrivateValues none
@@ -98,8 +154,22 @@ PreserveJobHistory No
     Allow fd00::/8
   </Limit>
 
-  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Job Cancel-Jobs Cancel-Current-Job Cancel-My-Jobs Suspend-Current-Job Resume-Job Close-Job CUPS-Move-Job CUPS-Get-Document Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs Promote-Job CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+  <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscription Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Job Cancel-Jobs Cancel-Current-Job Cancel-My-Jobs Suspend-Current-Job Resume-Job Close-Job CUPS-Move-Job CUPS-Get-Document>
     AuthType None
+    Order allow,deny
+    Allow localhost
+    Allow @LOCAL
+    Allow 10.0.0.0/8
+    Allow 172.16.0.0/12
+    Allow 192.168.0.0/16
+    Allow fe80::/10
+    Allow fd00::/8
+  </Limit>
+
+  # Printer/class administration requires the configured admin account when
+  # one is set; the job operations above stay available anonymously.
+  <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs CUPS-Accept-Jobs CUPS-Reject-Jobs Promote-Job CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
+${AUTH_POLICY}
     Order allow,deny
     Allow localhost
     Allow @LOCAL
