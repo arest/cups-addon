@@ -66,10 +66,36 @@ else
     echo "Admin authentication disabled (admin_username/admin_password empty)."
 fi
 
+# Migrate legacy data from /data/cups to /share/cups if present
+if [ -d /data/cups/config ] && [ ! -f /share/cups/config/.migrated ]; then
+    echo "Migrating CUPS data from /data/cups to /share/cups..."
+    cp -r /data/cups/config/printers.conf /share/cups/config/ 2>/dev/null || true
+    cp -r /data/cups/config/ppd/* /share/cups/config/ppd/ 2>/dev/null || true
+    cp -r /data/cups/config/ssl/* /share/cups/config/ssl/ 2>/dev/null || true
+    cp -r /data/cups/config/cupsd.conf /share/cups/config/ 2>/dev/null || true
+    cp -r /data/cups/cache/* /share/cups/cache/ 2>/dev/null || true
+    cp -r /data/cups/logs/* /share/cups/logs/ 2>/dev/null || true
+    cp -r /data/cups/state/* /share/cups/state/ 2>/dev/null || true
+    touch /share/cups/config/.migrated
+    echo "Migration complete."
+fi
+
 # ─────────────────────────────────────────────────────────────
-# Write a fresh cupsd.conf (this is static config we own)
+# Install cupsd.conf, preserving user customisations
+#
+# Only the block between the managed markers is owned by the
+# add-on. It is regenerated on every start so changes to the
+# app options (for example the admin credentials) take effect.
+# Directives added outside the markers (for example
+# "ServerAlias *" from the CUPS web UI) are kept as-is.
 # ─────────────────────────────────────────────────────────────
-cat > /share/cups/config/cupsd.conf << EOL
+CUPSD_CONF="/share/cups/config/cupsd.conf"
+MANAGED_BEGIN="# >>> CUPS ADD-ON MANAGED CONFIG (regenerated on start; add custom settings outside) >>>"
+MANAGED_END="# <<< CUPS ADD-ON MANAGED CONFIG <<<"
+
+render_managed_config() {
+    printf '%s\n' "$MANAGED_BEGIN"
+    cat << EOL
 # Listen on all interfaces (Port covers TCP+UDP for IPP/AirPrint)
 Port 631
 Listen /run/cups/cups.sock
@@ -193,19 +219,48 @@ ${AUTH_POLICY}
   </Limit>
 </Policy>
 EOL
+    printf '%s\n' "$MANAGED_END"
+}
 
-# Migrate legacy data from /data/cups to /share/cups if present
-if [ -d /data/cups/config ] && [ ! -f /share/cups/config/.migrated ]; then
-    echo "Migrating CUPS data from /data/cups to /share/cups..."
-    cp -r /data/cups/config/printers.conf /share/cups/config/ 2>/dev/null || true
-    cp -r /data/cups/config/ppd/* /share/cups/config/ppd/ 2>/dev/null || true
-    cp -r /data/cups/config/ssl/* /share/cups/config/ssl/ 2>/dev/null || true
-    cp -r /data/cups/config/cupsd.conf /share/cups/config/ 2>/dev/null || true
-    cp -r /data/cups/cache/* /share/cups/cache/ 2>/dev/null || true
-    cp -r /data/cups/logs/* /share/cups/logs/ 2>/dev/null || true
-    cp -r /data/cups/state/* /share/cups/state/ 2>/dev/null || true
-    touch /share/cups/config/.migrated
-    echo "Migration complete."
+update_managed_block() {
+    awk -v begin="$MANAGED_BEGIN" -v end="$MANAGED_END" -v managed="$CUPSD_CONF.new" '
+        $0 == begin {
+            while ((getline line < managed) > 0) print line
+            close(managed)
+            in_managed = 1
+            next
+        }
+        $0 == end { in_managed = 0; next }
+        !in_managed { print }
+    ' "$CUPSD_CONF" > "$CUPSD_CONF.tmp"
+}
+
+render_managed_config > "$CUPSD_CONF.new"
+
+if [ ! -s "$CUPSD_CONF" ]; then
+    mv "$CUPSD_CONF.new" "$CUPSD_CONF"
+    echo "Created cupsd.conf with the managed configuration block."
+elif grep -qF -- "$MANAGED_BEGIN" "$CUPSD_CONF" &&
+     grep -qF -- "$MANAGED_END" "$CUPSD_CONF"; then
+    update_managed_block
+    mv "$CUPSD_CONF.tmp" "$CUPSD_CONF"
+    rm -f "$CUPSD_CONF.new"
+    echo "Updated the managed cupsd.conf block; custom settings preserved."
+else
+    # Older versions rewrote cupsd.conf on every start. Migrate only when the
+    # file is still byte-for-byte what we generated; otherwise treat any
+    # difference as a user customisation and leave the file untouched.
+    awk -v begin="$MANAGED_BEGIN" -v end="$MANAGED_END" \
+        '$0 != begin && $0 != end' "$CUPSD_CONF.new" > "$CUPSD_CONF.legacy"
+    if cmp -s "$CUPSD_CONF" "$CUPSD_CONF.legacy"; then
+        mv "$CUPSD_CONF.new" "$CUPSD_CONF"
+        echo "Migrated cupsd.conf to the managed configuration block."
+    else
+        rm -f "$CUPSD_CONF.new"
+        echo "Preserving existing cupsd.conf with custom changes (no managed markers)."
+        echo "To let the add-on manage it again, back it up and remove it before restarting."
+    fi
+    rm -f "$CUPSD_CONF.legacy"
 fi
 
 # ─────────────────────────────────────────────────────────────

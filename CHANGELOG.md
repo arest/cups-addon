@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.4] — 2026-10-21
+
+- Preserve manual `cupsd.conf` edits (for example `ServerAlias *` made from the
+  CUPS web UI) across app restarts and updates. The add-on now rewrites only
+  its marked managed block and leaves user-added directives outside it intact.
+
 ## [1.3.3] — 2026-10-21
 
 - Fix `admin_username`/`admin_password` being ignored: create the configured
