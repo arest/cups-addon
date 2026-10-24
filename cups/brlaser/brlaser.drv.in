@@ -1,0 +1,902 @@
+// This file is part of the brlaser printer driver.
+//
+// Copyright 2013 Peter De Wachter
+//
+// brlaser is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 2 of the License, or
+// (at your option) any later version.
+//
+// brlaser is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with brlaser.  If not, see <http://www.gnu.org/licenses/>.
+
+#define USING "using @CMAKE_PROJECT_NAME@ v@BRLASER_VERSION@"
+
+// Include standard font and media definitions
+#include <font.defs>
+#include <media.defs>
+
+// List the fonts that are supported, in this case all standard fonts...
+Font *
+
+// Manufacturer and driver version.
+Manufacturer "Brother"
+Version "@BRLASER_VERSION@"
+
+// Each filter provided by the driver...
+Filter application/vnd.cups-raster 33 rastertobrlaser
+
+// Supported resolutions.
+// The 1200dpi mode is weird: we need to send 1200x1200dpi raster
+// data, but Brother only advertises 1200x600dpi. I wonder what
+// is going on there.
+// The 300dpi mode is reportedly not supported on all printers, so
+// it's listed in individual printer blocks where we believe it works.
+// Resolution k 1 0 0 0 "300dpi/300 DPI"
+// *Resolution k 1 0 0 0 "600dpi/600 DPI"
+// Resolution k 1 0 0 0 "1200dpi/1200 DPI"
+
+Option Resolution PickOne AnySetup 10
+  // Choice "300dpi/300 DPI" "<</HWResolution[300 300]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+  *Choice "600dpi/600 DPI" "<</HWResolution[600 600]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+  // Choice "1200dpi/1200 DPI" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+  Choice "1200x600dpi/HQ1200 (1200x600dpi)" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0/cupsInteger12 2>>setpagedevice"
+  // Choice "2400x600dpi/HQ1200 (2400x600dpi)" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0/cupsInteger12 1>>setpagedevice"
+
+// Supported page sizes.
+HWMargins 8 8 8 16
+*MediaSize A4
+MediaSize A5
+MediaSize A6
+MediaSize B5
+MediaSize B6
+MediaSize EnvC5
+MediaSize EnvMonarch
+MediaSize EnvDL
+MediaSize Executive
+MediaSize Legal
+MediaSize Letter
+
+// Input trays. Numbers must match the filter source code.
+*InputSlot 0 "Auto/Auto-select"
+InputSlot 1 "Tray1/Tray 1"
+InputSlot 2 "Tray2/Tray 2"
+InputSlot 3 "Tray3/Tray 3"
+InputSlot 4 "MPTray/MP Tray"
+InputSlot 5 "Manual/Manual"
+
+// Media types.
+*MediaType 0 "PLAIN/Plain paper"
+MediaType 1 "THIN/Thin paper"
+MediaType 2 "THICK/Thick paper"
+MediaType 3 "THICKER/Thicker paper"
+MediaType 4 "BOND/Bond paper"
+MediaType 5 "TRANS/Transparencies"
+MediaType 6 "ENV/Envelopes"
+MediaType 7 "ENV-THICK/Thick envelopes"
+MediaType 8 "ENV-THIN/Thin envelopes"
+
+Option "brlaserEconomode/Toner save mode" Boolean AnySetup 10
+  *Choice False/Off "<</cupsInteger10 0>>setpagedevice"
+  Choice True/On "<</cupsInteger10 1>>setpagedevice"
+
+Option "brlaserDensityAdjust/Toner Density" PickOne AnySetup 10
+  Choice "94/-6 (lighter)" "<</cupsInteger11 94>>setpagedevice"
+  Choice "95/-5 (lighter)" "<</cupsInteger11 95>>setpagedevice"
+  Choice "96/-4 (lighter)" "<</cupsInteger11 96>>setpagedevice"
+  Choice "97/-3 (lighter)" "<</cupsInteger11 97>>setpagedevice"
+  Choice "98/-2 (lighter)" "<</cupsInteger11 98>>setpagedevice"
+  Choice "99/-1 (lighter)" "<</cupsInteger11 99>>setpagedevice"
+  *Choice "100/0 (default)" "<</cupsInteger11 100>>setpagedevice"
+  Choice "101/+1 (darker)" "<</cupsInteger11 101>>setpagedevice"
+  Choice "102/+2 (darker)" "<</cupsInteger11 102>>setpagedevice"
+  Choice "103/+3 (darker)" "<</cupsInteger11 103>>setpagedevice"
+  Choice "104/+4 (darker)" "<</cupsInteger11 104>>setpagedevice"
+  Choice "105/+5 (darker)" "<</cupsInteger11 105>>setpagedevice"
+  Choice "106/+6 (darker)" "<</cupsInteger11 106>>setpagedevice"
+
+{
+  ModelName "Test Driver"
+  Attribute "NickName" "" "Brother A @CMAKE_PROJECT_NAME@ Test Driver, v@BRLASER_VERSION@; compatible with monochrome laser printers"
+  Attribute "1284DeviceID" "" "MFG:Brother;MDL:brlaser Test Driver;CLS:PRINTER;"
+
+  Option Resolution PickOne AnySetup 10
+    Choice "300dpi/300 DPI" "<</HWResolution[300 300]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+    Choice "1200dpi/1200 DPI" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+    Choice "2400x600dpi/HQ1200 (2400x600dpi)" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0/cupsInteger12 1>>setpagedevice"
+
+  PCFileName "br0000.ppd"
+}
+
+{
+  ModelName "Test Driver Duplex"
+  Attribute "NickName" "" "Brother A @CMAKE_PROJECT_NAME@ Test Driver Duplex, v@BRLASER_VERSION@; compatible with duplex monochrome laser printers"
+  Attribute "1284DeviceID" "" "MFG:Brother;MDL:brlaser Test Driver Duplex;CLS:PRINTER;"
+
+  Option Resolution PickOne AnySetup 10
+    Choice "300dpi/300 DPI" "<</HWResolution[300 300]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+    Choice "1200dpi/1200 DPI" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0>>setpagedevice"
+    Choice "2400x600dpi/HQ1200 (2400x600dpi)" "<</HWResolution[1200 1200]/cupsColorSpace 3/cupsBitsPerColor 1/cupsRowCount 0/cupsRowFeed 0/cupsRowStep 0/cupsInteger12 1>>setpagedevice"
+
+  Duplex rotated
+  PCFileName "br0000d.ppd"
+}
+
+{
+  ModelName "DCP-1510 series"
+  Attribute "NickName" "" "Brother DCP-1510 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,XL2HB;MDL:DCP-1510 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br1510.ppd"
+}
+
+{
+  ModelName "DCP-1600 series"
+  Attribute "NickName" "" "Brother DCP-1600 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,XL2HB;MDL:DCP-1600 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br1600.ppd"
+}
+
+{
+  ModelName "DCP-1610W series"
+  Attribute "NickName" "" "Brother DCP-1610W series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-1610W series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br1610.ppd"
+}
+
+{
+  ModelName "DCP-7010"
+  Attribute "NickName" "" "Brother DCP-7010, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7010;CLS:PRINTER;"
+  PCFileName "br7010.ppd"
+}
+
+{
+  ModelName "DCP-7020"
+  Attribute "NickName" "" "Brother DCP-7020, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7020;CLS:PRINTER;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br7020.ppd"
+}
+
+{
+  ModelName "DCP-7030"
+  Attribute "NickName" "" "Brother DCP-7030, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7030;CLS:PRINTER;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br7030.ppd"
+}
+
+{
+  ModelName "DCP-7040"
+  Attribute "NickName" "" "Brother DCP-7040, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7040;CLS:PRINTER;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br7040.ppd"
+}
+
+{
+  ModelName "DCP-7055"
+  Attribute "NickName" "" "Brother DCP-7055, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7055;CLS:PRINTER;CID:Brother Laser Type1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br7055.ppd"
+}
+
+{
+  ModelName "DCP-7055W"
+  Attribute "NickName" "" "Brother DCP-7055W, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7055W;CLS:PRINTER;CID:Brother Laser Type1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br7055w.ppd"
+}
+
+{
+  ModelName "DCP-7060D"
+  Attribute "NickName" "" "Brother DCP-7060D, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7060D;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7060d.ppd"
+}
+
+{
+  ModelName "DCP-7065DN"
+  Attribute "NickName" "" "Brother DCP-7065DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7065DN;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7065d.ppd"
+}
+
+{
+  ModelName "DCP-7070DW"
+  Attribute "NickName" "" "Brother DCP-7070DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:DCP-7070DW;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7070d.ppd"
+}
+
+{
+  ModelName "DCP-7080"
+  Attribute "NickName" "" "Brother DCP-7080, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7080;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br7080.ppd"
+}
+
+{
+  ModelName "DCP-7080D"
+  Attribute "NickName" "" "Brother DCP-7080D, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-7080D;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7080d.ppd"
+}
+
+{
+  ModelName "DCP-8065DN"
+  Attribute "NickName" "" "Brother DCP-8065DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:DCP-8065DN;CLS:PRINTER;"
+  Duplex rotated
+  PCFileName "br8065d.ppd"
+}
+
+{
+  ModelName "DCP-B7500D series"
+  Attribute "NickName" "" "Brother DCP-B7500D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:DCP-B7500D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brb7500d.ppd"
+}
+
+{
+  ModelName "DCP-L2500D series"
+  Attribute "NickName" "" "Brother DCP-L2500D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-L2500D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2500d.ppd"
+}
+
+{
+  ModelName "DCP-L2510D series"
+  Attribute "NickName" "" "Brother DCP-L2510D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-L2510D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2510d.ppd"
+}
+
+{
+  ModelName "DCP-L2520D series"
+  Attribute "NickName" "" "Brother DCP-L2520D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-L2520D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2520d.ppd"
+}
+
+{
+  ModelName "DCP-L2520DW series"
+  Attribute "NickName" "" "Brother DCP-L2520DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-L2520DW series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2520w.ppd"
+}
+
+{
+  ModelName "DCP-L2537DW"
+  Attribute "NickName" "" "Brother DCP-L2537DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:DCP-L2537DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2537d.ppd"
+}
+
+{
+  ModelName "DCP-L2540DW series"
+  Attribute "NickName" "" "Brother DCP-L2540DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:DCP-L2540DW series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2540d.ppd"
+}
+
+{
+  ModelName "DCP-L2550DW series"
+  Attribute "NickName" "" "Brother DCP-L2550DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:DCP-L2550DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2550d.ppd"
+}
+
+{
+  ModelName "DCP-L2560DW series"
+  Attribute "NickName" "" "Brother DCP-L2560DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:DCP-L2560DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2560d.ppd"
+}
+
+{
+  ModelName "FAX-2820"
+  Attribute "NickName" "" "Brother FAX-2820, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:FAX-2820;CLS:PRINTER;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br2820.ppd"
+}
+
+{
+  ModelName "FAX-2840"
+  Attribute "NickName" "" "Brother FAX-2840, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;MFG:Brother;CMD:PJL,HBP;MDL:FAX-2840;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br2840.ppd"
+}
+
+{
+  ModelName "HL-1110 series"
+  Attribute "NickName" "" "Brother HL-1110 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-1110 series;CLS:PRINTER;CID:Brother Laser Type3;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "br1110.ppd"
+}
+
+{
+  ModelName "HL-1200 series"
+  Attribute "NickName" "" "Brother HL-1200 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-1200 series;CLS:PRINTER;CID:Brother Laser Type3;"
+  PCFileName "br1200.ppd"
+}
+
+{
+  ModelName "HL-1210W series"
+  Attribute "NickName" "" "Brother HL-1210W series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-1210W series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br1210.ppd"
+}
+
+{
+  ModelName "HL-1430 series"
+  Attribute "NickName" "" "Brother HL-1430 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL;MDL:HL-1430 series;CLS:PRINTER;"
+  PCFileName "br1430.ppd"
+}
+
+{
+  ModelName "HL-2030 series"
+  Attribute "NickName" "" "Brother HL-2030 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2030 series;CLS:PRINTER;"
+  PCFileName "br2030.ppd"
+}
+
+{
+  ModelName "HL-2130 series"
+  Attribute "NickName" "" "Brother HL-2130 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2130 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br2130.ppd"
+}
+
+{
+  ModelName "HL-2140 series"
+  Attribute "NickName" "" "Brother HL-2140 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2140 series;CLS:PRINTER;"
+  PCFileName "br2140.ppd"
+}
+
+{
+  ModelName "HL-2150N"
+  Attribute "NickName" "" "Brother HL-2150N, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2150N;CLS:PRINTER;"
+  PCFileName "br2150.ppd"
+}
+
+{
+  ModelName "HL-2220 series"
+  Attribute "NickName" "" "Brother HL-2220 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2220 series;CLS:PRINTER;"
+  PCFileName "br2220.ppd"
+}
+
+{
+  ModelName "HL-2230 series"
+  Attribute "NickName" "" "Brother HL-2230 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2230 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br2230.ppd"
+}
+
+{
+  ModelName "HL-2240 series"
+  Attribute "NickName" "" "Brother HL-2240 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2240 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br2240.ppd"
+}
+
+{
+  ModelName "HL-2240D series"
+  Attribute "NickName" "" "Brother HL-2240D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2240D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br2240d.ppd"
+}
+
+{
+  ModelName "HL-2250DN series"
+  Attribute "NickName" "" "Brother HL-2250DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-2250DN series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br2250d.ppd"
+}
+
+{
+  ModelName "HL-2260"
+  Attribute "NickName" "" "Brother HL-2260, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2260;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br2260.ppd"
+}
+
+{
+  ModelName "HL-2260D"
+  Attribute "NickName" "" "Brother HL-2260D, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-2260D;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br2260d.ppd"
+}
+
+{
+  ModelName "HL-2270DW series"
+  Attribute "NickName" "" "Brother HL-2270DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-2270DW series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  Duplex rotated
+  PCFileName "br2270d.ppd"
+}
+
+{
+  ModelName "HL-2280DW"
+  Attribute "NickName" "" "Brother HL-2280DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-2280DW;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br2280d.ppd"
+}
+
+{
+  ModelName "HL-5030 series"
+  Attribute "NickName" "" "Brother HL-5030 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL;MDL:HL-5030 series;CLS:PRINTER;"
+  PCFileName "br5030.ppd"
+}
+
+{
+  ModelName "HL-5040 series"
+  Attribute "NickName" "" "Brother HL-5040 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-5040 series;CLS:PRINTER;"
+  PCFileName "br5040.ppd"
+}
+
+{
+  ModelName "HL-5140 series"
+  Attribute "NickName" "" "Brother HL-5140 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-5140 series;CLS:PRINTER;"
+  PCFileName "br5140.ppd"
+}
+
+{
+  ModelName "HL-5250DN series"
+  Attribute "NickName" "" "Brother HL-5250DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,POSTSCRIPT;MDL:HL-5250DN series;CLS:PRINTER;"
+  Duplex rotated
+  PCFileName "br5250d.ppd"
+}
+
+{
+  ModelName "HL-5350DN series"
+  Attribute "NickName" "" "Brother HL-5350DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-5350DN series;CLS:PRINTER;"
+  Duplex rotated
+  PCFileName "br5350d.ppd"
+}
+
+{
+  ModelName "HL-5370DW series"
+  Attribute "NickName" "" "Brother HL-5370DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-5370DW series;CLS:PRINTER;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  Duplex rotated
+  PCFileName "br5370d.ppd"
+}
+
+{
+  ModelName "HL-5450DN series"
+  Attribute "NickName" "" "Brother HL-5450DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-5450DN series;CLS:PRINTER;CID:Brother Laser Type2;URF:W8,CP1,IS11-19-4,MT1-3-4-5-8-11,OB10,PQ4,RS300-600-1200,DM1;"
+  Duplex rotated
+  PCFileName "br5450d.ppd"
+}
+
+{
+  ModelName "HL-L1232W"
+  Attribute "NickName" "" "Brother HL-L1232W, $USING"
+  Attribute "1284DeviceID" "" "MMFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L1232W;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5;"
+  Duplex rotated
+  PCFileName "brl1232.ppd"
+}
+
+{
+  ModelName "HL-L2300D series"
+  Attribute "NickName" "" "Brother HL-L2300D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2300D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2300d.ppd"
+}
+
+{
+  ModelName "HL-L2305 series"
+  Attribute "NickName" "" "Brother HL-L2305 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2305 series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3;"
+  PCFileName "brl2305.ppd"
+}
+
+{
+  ModelName "HL-L2310D series"
+  Attribute "NickName" "" "Brother HL-L2310D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2310D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2310d.ppd"
+}
+
+{
+  ModelName "HL-L2320D series"
+  Attribute "NickName" "" "Brother HL-L2320D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2320D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2320d.ppd"
+}
+
+{
+  ModelName "HL-L2325DW"
+  Attribute "NickName" "" "Brother HL-L2325DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2325DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  Duplex rotated
+  PCFileName "brl2325d.ppd"
+}
+
+{
+  ModelName "HL-L2335D series"
+  Attribute "NickName" "" "Brother HL-L2335D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2335D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2335d.ppd"
+}
+
+{
+  ModelName "HL-L2340D series"
+  Attribute "NickName" "" "Brother HL-L2340D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2340D series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2340d.ppd"
+}
+
+{
+  ModelName "HL-L2350DW series"
+  Attribute "NickName" "" "Brother HL-L2350DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2350DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2350d.ppd"
+}
+
+{
+  ModelName "HL-L2360D series"
+  Attribute "NickName" "" "Brother HL-L2360D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2360D series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2360d.ppd"
+}
+
+{
+  ModelName "HL-L2370DN series"
+  Attribute "NickName" "" "Brother HL-L2370DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2370DN series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2370d.ppd"
+}
+
+{
+  ModelName "HL-L2375DW series"
+  Attribute "NickName" "" "Brother HL-L2375DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2375DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2375d.ppd"
+}
+
+{
+  ModelName "HL-L2380DW series"
+  Attribute "NickName" "" "Brother HL-L2380DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2380DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2380d.ppd"
+}
+
+{
+  ModelName "HL-L2390DW"
+  Attribute "NickName" "" "Brother HL-L2390DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2390DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2390d.ppd"
+}
+
+{
+  ModelName "HL-L2400D"
+  Attribute "NickName" "" "Brother HL-L2400D, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2400D;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2400d.ppd"
+}
+
+{
+  ModelName "HL-L2400DW"
+  Attribute "NickName" "" "Brother HL-L2400DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2400DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2400w.ppd"
+}
+
+{
+  ModelName "HL-L2400DWE"
+  Attribute "NickName" "" "Brother HL-L2400DWE, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2400DWE;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2400e.ppd"
+}
+
+{
+  ModelName "HL-L2402D"
+  Attribute "NickName" "" "Brother HL-L2402D, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:HL-L2402D;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl2402d.ppd"
+}
+
+{
+  ModelName "HL-L2405W"
+  Attribute "NickName" "" "Brother HL-L2405W, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2405W;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  PCFileName "brl2405.ppd"
+}
+
+{
+  ModelName "HL-L2440DW"
+  Attribute "NickName" "" "Brother HL-L2440DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:HL-L2440DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2440d.ppd"
+}
+
+{
+  ModelName "HL-L2460DW"
+  Attribute "NickName" "" "Brother HL-L2460DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2460DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2460d.ppd"
+}
+
+{
+  ModelName "HL-L2480DW"
+  Attribute "NickName" "" "Brother HL-L2480DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:HL-L2480DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2480d.ppd"
+}
+
+{
+  ModelName "HL-L5000D series"
+  Attribute "NickName" "" "Brother HL-L5000D series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:HL-L5000D series;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "brl5000d.ppd"
+}
+
+{
+  ModelName "MFC-1810 series"
+  Attribute "NickName" "" "Brother MFC-1810 series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,XL2HB;MDL:MFC-1810 series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br1810.ppd"
+}
+
+{
+  ModelName "MFC-1910W series"
+  Attribute "NickName" "" "Brother MFC-1910W series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;MFG:Brother;CMD:PJL,HBP;MDL:MFC-1910W series;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br1910.ppd"
+}
+
+{
+  ModelName "MFC-7240"
+  Attribute "NickName" "" "Brother MFC-7240, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;MFG:Brother;CMD:PJL,HBP;MDL:MFC-7240;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br7240.ppd"
+}
+
+{
+  ModelName "MFC-7320"
+  Attribute "NickName" "" "Brother MFC-7320, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7320;CLS:PRINTER;"
+  PCFileName "br7320.ppd"
+}
+
+{
+  ModelName "MFC-7340"
+  Attribute "NickName" "" "Brother MFC-7340, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7340;CLS:PRINTER;"
+  PCFileName "br7340.ppd"
+}
+
+{
+  ModelName "MFC-7360N"
+  Attribute "NickName" "" "Brother MFC-7360N, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7360N;CLS:PRINTER;CID:Brother Laser Type1;"
+  PCFileName "br7360.ppd"
+}
+
+{
+  ModelName "MFC-7365DN"
+  Attribute "NickName" "" "Brother MFC-7365DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7365DN;CLS:PRINTER;CID:Brother Laser Type1;"
+  Resolution k 1 0 0 0 "300dpi/300 DPI"
+  Duplex rotated
+  PCFileName "br7365d.ppd"
+}
+
+{
+  ModelName "MFC-7420"
+  Attribute "NickName" "" "Brother MFC-7420, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7420;CLS:PRINTER;"
+  PCFileName "br7420.ppd"
+}
+
+{
+  ModelName "MFC-7440N"
+  Attribute "NickName" "" "Brother MFC-7440N, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7440N;CLS:PRINTER;"
+  PCFileName "br7440.ppd"
+}
+
+{
+  ModelName "MFC-7460DN"
+  Attribute "NickName" "" "Brother MFC-7460DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP;MDL:MFC-7460DN;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7460d.ppd"
+}
+
+{
+  ModelName "MFC-7860DW"
+  Attribute "NickName" "" "Brother MFC-7860DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL;MDL:MFC-7860DW;CLS:PRINTER;CID:Brother Laser Type1;"
+  Duplex rotated
+  PCFileName "br7860d.ppd"
+}
+
+{
+  ModelName "MFC-8440"
+  Attribute "NickName" "" "Brother MFC-8440, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:HBP,PJL,PCL,PCLXL;MDL:MFC-8440;CLS:PRINTER;"
+  PCFileName "br8440.ppd"
+}
+
+{
+  ModelName "MFC-8710DW"
+  Attribute "NickName" "" "Brother MFC-8710DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:MFC-8710DW;CLS:PRINTER;CID:Brother Laser Type2;URF:W8,CP1,IS11-19-4,MT1-3-4-5-8-11,OB10,PQ4,RS300-600-1200,DM1;"
+  Duplex rotated
+  PCFileName "br8710d.ppd"
+}
+
+{
+  ModelName "MFC-8860DN"
+  Attribute "NickName" "" "Brother MFC-8860DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,POSTSCRIPT;MDL:MFC-8860DN;CLS:PRINTER;"
+  Duplex rotated
+  PCFileName "br8860d.ppd"
+}
+
+{
+  ModelName "MFC-9160"
+  Attribute "NickName" "" "Brother MFC-9160, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:HBP,PCL;MDL:MFC-9160;CLS:PRINTER;"
+  PCFileName "br9160.ppd"
+}
+
+{
+  ModelName "MFC-L2685DW"
+  Attribute "NickName" "" "Brother MFC-L2685DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2685DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS200-300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2685d.ppd"
+}
+
+{
+  ModelName "MFC-L2690DW"
+  Attribute "NickName" "" "Brother MFC-L2690DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2690DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2690d.ppd"
+}
+
+{
+  ModelName "MFC-L2700DN series"
+  Attribute "NickName" "" "Brother MFC-L2700DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;MDL:MFC-L2700DN series;CMD:PJL,HBP,URF;"
+  Duplex rotated
+  PCFileName "brl2700d.ppd"
+}
+
+{
+  ModelName "MFC-L2700DW series"
+  Attribute "NickName" "" "Brother MFC-L2700DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2700DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS200-300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2700w.ppd"
+}
+
+{
+  ModelName "MFC-L2740DW series"
+  Attribute "NickName" "" "Brother MFC-L2740DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:MFC-L2740DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS200-300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "brl2740d.ppd"
+}
+
+{
+  ModelName "MFC-L2710DN series"
+  Attribute "NickName" "" "Brother MFC-L2710DN series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2710DN series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2710d.ppd"
+}
+
+{
+  ModelName "MFC-L2710DW series"
+  Attribute "NickName" "" "Brother MFC-L2710DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2710DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2710w.ppd"
+}
+
+{
+  ModelName "MFC-L2750DW series"
+  Attribute "NickName" "" "Brother MFC-L2750DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:MFC-L2750DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl2750d.ppd"
+}
+
+{
+  ModelName "MFC-L2800DW"
+  Attribute "NickName" "" "Brother MFC-L2800DW, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,HBP,URF;MDL:MFC-L2800DW;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ3-4-5,RS300-600-1200,V1.5,DM1;"
+  Duplex rotated
+  PCFileName "brl2800d.ppd"
+}
+
+{
+  ModelName "MFC-L5800DW series"
+  Attribute "NickName" "" "Brother MFC-L5800DW series, $USING"
+  Attribute "1284DeviceID" "" "MFG:Brother;CMD:PJL,PCL,PCLXL,URF;MDL:MFC-L5800DW series;CLS:PRINTER;CID:Brother Laser Type1;URF:W8,CP1,IS19-1,MT1-3-4-5-8,OB10,PQ4,RS300-600-1200,V1.4,DM1;"
+  Duplex rotated
+  PCFileName "brl5800d.ppd"
+}
+
+{
+  ModelName "DocuPrint P265 dw"
+  Attribute "NickName" "" "Fuji Xerox DocuPrint P265 dw, $USING"
+  Attribute "1284DeviceID" "" "MFG:FX;CMD:PJL,PCL,PCLXL,URF;MDL:DocuPrint P265 dw;CLS:PRINTER;CID:FX Laser Type1;URF:W8,CP1,IS4-1,MT1-3-4-5-8,OB10,PQ4,RS300-600,V1.3,DM1;"
+  Duplex rotated
+  PCFileName "fxp265d.ppd"
+}
+
+{
+  ModelName "LJ2650DN"
+  Attribute "NickName" "" "Lenovo LJ2650DN, $USING"
+  Attribute "1284DeviceID" "" "MFG:Lenovo;CMD:PJL,PCL,PCLXL;MDL:LJ2650DN;CLS:PRINTER;"
+  Duplex rotated
+  PCFileName "lnj2650d.ppd"
+}
