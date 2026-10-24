@@ -1,0 +1,155 @@
+brlaser v6.2.8
+    New printer entries:
+        Brother HL-1210W series
+        Brother HL-1430 series
+        Brother HL-2150N
+        Brother HL-5250DN series
+        Brother HL-5350DN series
+        Brother HL-L1232W
+        Brother HL-L2325DW
+        Brother HL-L2400D
+        Brother HL-L2400DWE
+        Brother HL-L2440DW
+        Brother HL-L2460DW
+        Brother HL-L2480DW
+        Brother MFC-L2685DW
+        Brother MFC-L2740DW series
+        Brother MFC-L2800DW
+        Brother MFC-L5800DW series
+
+    Code Changes:
+        Implemented support for all 1200dpi modes
+        Add toner density adjustment option
+
+    Issues Resolved:
+        Cannot build with CMake 4.0 (CMake < v3.5 support removed)
+
+brlaser v6.2.7 (2025-01-20)
+    New printer entries:
+        Brother DCP-7010
+        Brother DCP-B7500D series
+        Brother DCP-L2560DW series
+        Brother HL-2240 series
+        Brother HL-2260D
+        Brother HL-5140 series
+        Brother HL-5370DW series
+        Brother HL-5450DN series
+        Brother HL-L2402D
+        Brother MFC-8440
+        Brother MFC-L2690DW
+        Brother HL-L2400DW
+        Brother HL-L2405W
+
+    Added printer entries for "Test Drivers".
+
+    Code Changes:
+        Correct PCFileName for DocuPrint P265 dw
+        Replaced `Duplex normal` with `Duplex rotated`
+        Both Duplex & Tumble use PLC `&l2S`
+
+    Issues Resolved:
+        Incorrect Duplex & Tumble Check Statement
+        Duplex long-edge actually prints duplex short-edge
+        All reverse sides are unreadable with artefactsbug (duplex long-edge)
+
+brlaser v6.2.6 (2023-08-02)
+    New printer entries:
+        Brother FAX-2840
+        Brother HL-2260
+        Brother HL-L2335D series
+        Brother MFC-7860DW
+        Brother MFC-9160
+
+    Code Changes:
+        All entries in brlaser.drv.in and README.md now follow a set naming convention
+
+brlaser v6.2.5 (2023-03-14)
+    Merge pull requests:
+        Add Tumble support; Thanks @evanmiller
+        Fix build under Fedora 38; Thanks @ondrejbudai
+
+    New printer entries:
+        Brother FAX-2820
+        Brother DCP-1610W
+
+    Code Changes:
+        Added \033&l1S for duplex no tumble printing, as well as logic print
+          duplex with and without tumble.
+        Explicitly include cstdint in test/tempfile.h, so uint8_t is correctly defined.
+
+    Issues Resolved:
+        Fixed building under Fedora 38; error: 'uint8_t' was not declared in this scope.
+
+brlaser v6.2 (2022-12-25)
+    Merge pull requests:
+        Brother DCP-7070DW; Thanks @musinsky
+        Brother MFC-7460DN; Thanks @yaxollum
+        Explicitly disable duplex; Thanks @tomjnixon
+
+    New printer entries:
+        Brother DCP-7070DW
+        Brother DCP-8065DN
+        Brother HL-L2370DN
+        Brother HL-L5000D
+
+    Code Changes:
+        Corrected MFC-7460DN PPD file name br7365dn.ppd > br7460dn.ppd.
+        Explicitly disable duplex in PCL \033&l0S.
+
+    Issues Resolved:
+        MFC-7365DN & MFC-7460DN used the same PCFileName.
+        HL-L2350DW continued to duplex even when disabled, but every other page was garbled.
+
+brlaser v6.1 (2022-01-14)
+    New printer entries:
+        Brother DCP-7020
+        Brother DCP-L2510D
+        Brother DCP-L2537DW
+        Brother DCP-L2550DW
+        Brother HL-2130
+        Brother HL-2230
+        Brother HL-2240D
+        Brother HL-2250DN
+        Brother HL-2280DW
+        Brother HL-5040
+        Brother HL-L2305
+        Brother HL-L2310D
+        Brother HL-L2350DW
+        Brother HL-L2380DW
+        Brother MFC-1810
+        Brother MFC-7320
+        Brother MFC-7340
+        Brother MFC-7440N
+        Brother MFC-8710DW
+        Brother MFC-8860DN
+        Brother MFC-L2700DN
+        Brother MFC-L2700DW
+        Brother MFC-L2710DN
+        Brother MFC-L2750DW
+        Brother MFC-L3750CDW
+        Lenovo LJ2650DN
+        Fuji Xerox DocuPrint P265 dw
+
+brlaser v6 (2019-09-22)
+    Added support for some more Brother HL-series printers. These printers
+      had glitched output in earlier releases.
+
+brlaser v5 (2019-05-18)
+    Fixed problems with Brother HL-series printers in 600 dpi mode. Thanks
+      to Onno Kortmann for the fix.
+    Added several printers.
+
+brlaser v4 (2018-02-25)
+    Added several printers.
+    Merged duplex printing support from @xc-racer99. Enabled for DCP-7065DN.
+    Switched to a CMake build system.
+
+brlaser v3 (2014-07-07)
+    Added DCP-7065DN description.
+
+brlaser v2 (2014-06-29)
+    Suppport compilation with GCC 4.6.
+    Add a basic test suite.
+
+brlaser v1 (2013-12-30)
+    Initial release.
