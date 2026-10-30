@@ -79,6 +79,29 @@ RUN \
     rm -rf /tmp/dymo-cups-drivers && \
     apk del .dymo-build
 
+# Build and install brlaser, the open-source CUPS driver for Brother
+# host-based (GDI) laser printers such as the HL-2130, HL-2140, HL-1110,
+# DCP-7030 and many more. These printers speak neither PCL nor PostScript,
+# so Gutenprint cannot drive them, and Brother's own Linux driver is an
+# i386/glibc binary that does not run on Alpine. The vendored source is
+# Owl-Maintain/brlaser v6.2.8 (GPL-2.0). Paths are pinned explicitly
+# because the CUPS_DATADIR environment variable above points at /share.
+COPY brlaser /tmp/brlaser
+RUN \
+    apk add --no-cache --virtual .brlaser-build \
+        cmake \
+        g++ \
+        make \
+        cups-dev && \
+    cmake -S /tmp/brlaser -B /tmp/brlaser/build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCUPS_DATA_DIR=/usr/share/cups \
+        -DCUPS_SERVER_BIN=/usr/lib/cups && \
+    cmake --build /tmp/brlaser/build && \
+    cmake --install /tmp/brlaser/build && \
+    rm -rf /tmp/brlaser && \
+    apk del .brlaser-build
+
 # Copy data
 COPY rootfs /
 
