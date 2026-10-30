@@ -142,6 +142,10 @@ the Alpine `gutenprint-cups` package. In the add-printer list, models often
 appear as a series name (for example Canon PIXMA MG5250 is **Canon MG5200
 series - CUPS+Gutenprint**).
 
+Brother host-based (GDI) lasers that speak neither PCL nor PostScript (for
+example HL-2130, HL-2140, HL-1110, DCP-7030/7055) are covered by the bundled
+open-source brlaser driver: pick **Brother <model>, using brlaser**.
+
 For printers Gutenprint does not cover, supply a `.deb` through
 `printer_driver_deb` (place the file in `/share`) or use a PPD from:
 

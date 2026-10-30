@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.5] — 2026-10-24
+
+- Add the open-source brlaser driver (Owl-Maintain/brlaser v6.2.8) for Brother
+  host-based (GDI) laser printers such as the HL-2130, HL-2140, HL-1110 and
+  DCP-7030/7055. These printers understand neither PCL nor PostScript, so the
+  bundled Gutenprint drivers left them silent. The models now appear in the
+  add-printer list as "Brother <model>, using Owl-Maintain/brlaser v6.2.8".
+
 ## [1.3.4] — 2026-10-21
 
 - Preserve manual `cupsd.conf` edits (for example `ServerAlias *` made from the
