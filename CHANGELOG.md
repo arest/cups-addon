@@ -1,11 +1,10 @@
 # Changelog
 
-## [1.3.3] — 2026-10-20
+## [1.3.3] — 2026-10-31
 
 - Add Canon BJNP network printing backend (cups-bjnp 2.0.3), compiled at image build time.
 - Verify BJNP upstream source archive using SHA-256.
 - Preserve Gutenprint, existing printer drivers, and other upstream features.
-- Rename add-on display name to "CUPS Print Server (BJNP)".
 
 ## [1.3.2] — 2026-09-09
 
