@@ -1,6 +1,6 @@
 
 
-# Home Assistant CUPS Print Server App with BJNP support
+# Home Assistant CUPS Print Server App
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/arest/cups-addon)
 [![Supports aarch64 Architecture](https://img.shields.io/badge/aarch64-yes-green.svg)](https://github.com/arest/cups-addon)
