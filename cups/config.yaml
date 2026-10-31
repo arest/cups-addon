@@ -2,7 +2,7 @@
 version: 1.3.3
 slug: cups
 name: CUPS Print Server
-description: CUPS print server
+description: CUPS print server for network printing
 url: https://github.com/arest/cups-addon
 codenotary: andrea_restello@yahoo.it
 arch:
