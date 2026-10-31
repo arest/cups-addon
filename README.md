@@ -25,7 +25,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 1. Navigate to your Home Assistant instance.
 2. Go to **Settings** → **Apps** → **Install App**.
 3. Click the 3-dot menu in the top right corner and select **Repositories**.
-4. Add `https://github.com/nilbaer/cups-addon` as a repository.
+4. Add `https://github.com/arest/cups-addon` as a repository.
 5. Find the "CUPS Print Server" app in the store and click it.
 6. Click **Install**.
 
@@ -35,7 +35,7 @@ If you prefer to manually install:
 
 1. Clone this repository to your local machine:
    ```bash
-   git clone https://github.com/nilbaer/cups-addon.git
+   git clone https://github.com/arest/cups-addon.git
    ```
 
 2. Copy the repository to your Home Assistant add-ons directory:
