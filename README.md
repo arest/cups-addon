@@ -236,6 +236,7 @@ Runtime data is kept inside the container instead of `/share`:
 - `/var/cache/cups`: CUPS cache data
 - `/run/cups`: CUPS state information
 - `/var/log/cups`: CUPS access/page logs
+- `/var/spool/cups`: CUPS job spool
 
 The cupsd error log is also written to stderr, so scheduler messages appear in
 the app's **Log** tab.
