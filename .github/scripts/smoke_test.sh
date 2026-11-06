@@ -183,20 +183,25 @@ if server_exec 'test ! -e /share/cups'; then
 else
   bad "/share/cups still exists"
 fi
-for dir in /var/cache/cups /run/cups; do
+for dir in /var/cache/cups /var/log/cups /run/cups /var/spool/cups; do
   if server_exec "test -d $dir"; then
     ok "runtime directory exists inside the container: $dir"
   else
     bad "runtime directory missing: $dir"
   fi
 done
-for dir in cache logs state; do
+for dir in cache logs state spool; do
   if server_exec "test ! -e /config/$dir"; then
     ok "runtime data is not stored in /config/$dir"
   else
     bad "/config/$dir unexpectedly exists"
   fi
 done
+
+# CUPS still resolves its configuration through /etc/cups, but that must be the
+# same persistent directory the Supervisor mounts at /config.
+expect_eq "/etc/cups points at the persistent app config folder" \
+  "$(server_exec 'readlink -f /etc/cups' || true)" "/config"
 
 # --- manual configuration persistence ---------------------------------------
 # Editing the configuration from the CUPS web UI writes directly to
