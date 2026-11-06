@@ -1,5 +1,5 @@
 ---
-version: 1.3.5
+version: 1.3.6
 slug: cups
 name: CUPS Print Server
 description: CUPS print server for network printing
@@ -12,8 +12,7 @@ hassio_api: true
 host_network: true
 usb: true
 map:
-  - data:rw
-  - share:rw
+  - app_config:rw
 init: false
 ports:
   631/tcp: 631

@@ -71,7 +71,7 @@ Set a strong password before exposing the app to your network. Leave
 > The add-on owns only the block between the
 > `# >>> CUPS ADD-ON MANAGED CONFIG` and
 > `# <<< CUPS ADD-ON MANAGED CONFIG <<<` markers in
-> `/share/cups/config/cupsd.conf`. It is regenerated on every start so changes
+> `/config/cupsd.conf`. It is regenerated on every start so changes
 > to the app options take effect. Add custom directives (for example
 > `ServerAlias *`) outside that block; they are preserved across app restarts
 > and updates, including when you save the file from the CUPS web UI.
@@ -147,7 +147,8 @@ example HL-2130, HL-2140, HL-1110, DCP-7030/7055) are covered by the bundled
 open-source brlaser driver: pick **Brother <model>, using brlaser**.
 
 For printers Gutenprint does not cover, supply a `.deb` through
-`printer_driver_deb` (place the file in `/share`) or use a PPD from:
+`printer_driver_deb` (place the file in the app config folder, `/config`) or use
+a PPD from:
 
 - https://www.openprinting.org/download/PPD/
 - https://www.openprinting.org/drivers/
@@ -213,16 +214,28 @@ This project is licensed under the MIT License.
 
 ## Data Persistence
 
-This app stores all CUPS data in the Home Assistant `/share` directory, ensuring:
+CUPS configuration is stored in the Supervisor-managed app config folder
+(`/config`), which is included in Home Assistant backups. This keeps printer
+settings, PPDs, certificates and custom `cupsd.conf` directives across app
+restarts, updates and system reboots.
 
-- Printer configurations persist across app restarts
-- Custom `cupsd.conf` directives outside the managed block survive restarts
-- Print jobs and settings are maintained through system reboots
-- App updates won't cause loss of printer configurations
-- All CUPS data is included in Home Assistant backups
+> Upgrading from 1.3.5 or earlier: older releases stored this data in
+> `/share/cups/config`, and `/share` is no longer mapped. Before updating, copy
+> that directory into the app's own configuration folder (mounted as `/config`
+> inside the container). The add-on also attempts a one-time import if the old
+> `/share/cups/config` directory is still visible.
 
-The following directories are maintained in the persistent storage:
-- `/share/cups/config`: CUPS configuration files
-- `/share/cups/cache`: CUPS cache data
-- `/share/cups/logs`: CUPS log files
-- `/share/cups/state`: CUPS state information
+The following files are persistent:
+- `/config/cupsd.conf`: CUPS daemon configuration
+- `/config/printers.conf`: configured printers and queues
+- `/config/ppd`: printer PPD files
+- `/config/ssl`: CUPS TLS certificates
+- `/config/cups-files.conf`: CUPS file/group settings
+
+Runtime data is kept inside the container instead of `/share`:
+- `/var/cache/cups`: CUPS cache data
+- `/run/cups`: CUPS state information
+- `/var/log/cups`: CUPS access/page logs
+
+The cupsd error log is also written to stderr, so scheduler messages appear in
+the app's **Log** tab.
