@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.6] — 2026-11-06
+
+- Stop using `/share` for runtime data. CUPS configuration now lives in the
+  Supervisor-managed app config folder (`/config`), while cache, logs and state
+  stay inside the container. cupsd's error log is written to stderr, so it is
+  shown in the app log. Existing `/share/cups/config` data is migrated when the
+  old directory is still available during an upgrade.
+
 ## [1.3.5] — 2026-10-24
 
 - Add the open-source brlaser driver (Owl-Maintain/brlaser v6.2.8) for Brother

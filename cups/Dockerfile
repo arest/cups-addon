@@ -2,12 +2,9 @@ FROM ghcr.io/home-assistant/base:latest
 
 # Add env
 ENV LANG=C.UTF-8
-# Set CUPS environment variables for data persistence (HA shared directory)
-ENV CUPS_DATADIR=/share/cups
-ENV CUPS_CACHEDIR=/share/cups/cache
-ENV CUPS_LOGDIR=/share/cups/logs
-ENV CUPS_STATEDIR=/share/cups/state
-ENV CUPS_SERVERROOT=/share/cups/config
+# Set CUPS' persistent configuration directory to the Supervisor-managed
+# app config folder. Cache, logs, state and the spool stay in the container.
+ENV CUPS_SERVERROOT=/config
 
 # Setup base
 # Note: hplip, foomatic-db, and foomatic-db-ppds were removed from Alpine 3.23
@@ -84,8 +81,8 @@ RUN \
 # DCP-7030 and many more. These printers speak neither PCL nor PostScript,
 # so Gutenprint cannot drive them, and Brother's own Linux driver is an
 # i386/glibc binary that does not run on Alpine. The vendored source is
-# Owl-Maintain/brlaser v6.2.8 (GPL-2.0). Paths are pinned explicitly
-# because the CUPS_DATADIR environment variable above points at /share.
+# Owl-Maintain/brlaser v6.2.8 (GPL-2.0). Install paths are pinned explicitly
+# so the driver lands in the image regardless of the CUPS_* environment.
 COPY brlaser /tmp/brlaser
 RUN \
     apk add --no-cache --virtual .brlaser-build \
