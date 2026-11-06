@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.6] — 2026-11-06
+
+- Add Canon BJNP network printing support for older network printers (tested
+  with a PIXMA MX860). Build cups-bjnp 2.0.3 from the Debian source archive at
+  image build time, verify its SHA-256, and install it as the CUPS BJNP backend.
+- Smoke-test the BJNP backend and its runtime dependencies.
+
 ## [1.3.5] — 2026-10-24
 
 - Add the open-source brlaser driver (Owl-Maintain/brlaser v6.2.8) for Brother

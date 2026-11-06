@@ -11,6 +11,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 ## Features
 
 - **Network Printing**: Share printers across your local network using CUPS
+- **Canon BJNP support**: Network printing with older Canon printers (tested with a PIXMA MX860 over LAN)
 - **Web Interface**: Access the CUPS administration panel at `http://<your-ha-ip>:631` to add and manage printers
 - **Secure Administration**: Configurable authentication for the CUPS admin interface
 - **Printer Support**: Compatible with a wide range of network and USB printers
@@ -115,7 +116,7 @@ You can also print to `ipp://<your-ha-ip>:631/printers/<queue-name>`.
 
 This app supports various printer types:
 
-- Network printers (via IPP, LPD, etc.)
+- Network printers (via IPP, LPD, BJNP, etc.)
 - USB printers connected to your Home Assistant host
 - Shared Windows printers (via Samba)
 - AirPrint for Apple devices
