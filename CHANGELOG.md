@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.3.7] — 2026-11-07
+
+- Add Canon BJNP network printing support using cups-bjnp 2.0.3.
+- Verify the BJNP source archive using SHA-256.
+- Add smoke-test checks for the BJNP backend and its runtime dependencies.
+
 ## [1.3.6] — 2026-11-06
 
 - Stop using `/share` for runtime data. CUPS configuration now lives in the
