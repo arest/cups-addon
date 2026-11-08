@@ -109,6 +109,19 @@ for filter in rastertokpsl raster2dymolw raster2dymolm rastertogutenprint.5.3 gs
 done
 expect_eq "compiled CUPS filter binaries are present and executable" "$missing" ""
 
+# Check the Canon BJNP backend in the final image.
+if server_exec 'test -x /usr/lib/cups/backend/bjnp'; then
+  ok "BJNP backend is present and executable"
+else
+  bad "BJNP backend is missing or not executable"
+fi
+
+if server_exec 'ldd /usr/lib/cups/backend/bjnp >/dev/null 2>&1'; then
+  ok "BJNP runtime dependencies resolve"
+else
+  bad "BJNP runtime dependencies are missing"
+fi
+
 for ppd in \
   /usr/share/cups/model/lw4xl.ppd \
   /usr/share/cups/model/lw450.ppd \

@@ -99,6 +99,31 @@ RUN \
     rm -rf /tmp/brlaser && \
     apk del .brlaser-build
 
+# Canon BJNP network backend (port 8611): build from Debian's published
+# cups-bjnp 2.0.3 source. The checksum protects against unexpected changes.
+RUN \
+    apk add --no-cache --virtual .bjnp-build \
+        build-base \
+        cups-dev \
+        curl \
+        ca-certificates && \
+    mkdir -p /tmp/cups-bjnp && \
+    curl --fail --location --retry 3 \
+      -o /tmp/cups-bjnp.tar.gz \
+      https://deb.debian.org/debian/pool/main/c/cups-bjnp/cups-bjnp_2.0.3.orig.tar.gz && \
+    echo "c914b2fd9d8e26ce22f2df6244d9defeec31ee9a5360f723eecb3b00f2168500  /tmp/cups-bjnp.tar.gz" | sha256sum -c - && \
+    tar -xzf /tmp/cups-bjnp.tar.gz -C /tmp/cups-bjnp --strip-components=1 && \
+    cd /tmp/cups-bjnp && \
+    ./configure --prefix=/usr \
+      --with-cupsbackenddir=/usr/lib/cups/backend \
+      --disable-Werror && \
+    make && \
+    install -m 755 bjnp /usr/lib/cups/backend/bjnp && \
+    test -x /usr/lib/cups/backend/bjnp && \
+    cd / && \
+    rm -rf /tmp/cups-bjnp /tmp/cups-bjnp.tar.gz && \
+    apk del .bjnp-build
+
 # Copy data
 COPY rootfs /
 

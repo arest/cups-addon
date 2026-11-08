@@ -16,6 +16,7 @@ This Home Assistant app provides a CUPS (Common Unix Printing System) print serv
 - **Printer Support**: Compatible with a wide range of network and USB printers
 - **Lightweight**: Built on Alpine Linux for minimal resource usage
 - **Data Persistence**: Printer settings and configurations persist across restarts and updates
+- **BJNP Support**: Network printing for compatible Canon printers using the BJNP protocol.
 
 ## Installation
 
@@ -115,7 +116,7 @@ You can also print to `ipp://<your-ha-ip>:631/printers/<queue-name>`.
 
 This app supports various printer types:
 
-- Network printers (via IPP, LPD, etc.)
+- Network printers (via IPP, LPD, BJNP, etc.)
 - USB printers connected to your Home Assistant host
 - Shared Windows printers (via Samba)
 - AirPrint for Apple devices
