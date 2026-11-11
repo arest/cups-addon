@@ -108,7 +108,6 @@ SystemGroup lpadmin
 Browsing Yes
 BrowseLocalProtocols dnssd
 DefaultShared Yes
-JobSheets none,none
 PreserveJobHistory No
 
 # @LOCAL plus explicit v6 prefixes: Port 631 listens on IPv6 and Apple
